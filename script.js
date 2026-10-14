@@ -634,7 +634,12 @@ document.addEventListener('keydown', (e) => {
 // ── Keyboard: double-0 = clear ────────────────────────────────
 let zeroCount = 0, zeroTimer = null;
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT') return;
+  if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+  if (e.key === '1' && !e.repeat) {
+    e.preventDefault();
+    resetMultipliers();
+    return;
+  }
   if (e.key === '0') {
     e.preventDefault();
     zeroCount++;

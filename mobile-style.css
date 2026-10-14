@@ -46,6 +46,9 @@
     .chart-title { font-size: 9px; }
     .chart-legend { flex-wrap: wrap; gap: 8px; }
     .legend-item  { font-size: 9px; }
+    .energia-header { flex-wrap: wrap; }
+    .energia-title { flex: 1 0 100%; }
+    .energia-controls { width: 100%; justify-content: flex-end; }
 
     .sidebar-col {
       width: 100%;

@@ -303,21 +303,47 @@
   .energia-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
     flex-shrink: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .energia-title {
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+    white-space: nowrap;
     font-family: var(--font-mono);
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 400;
     letter-spacing: 0.05em;
     color: var(--muted);
-    margin-right: auto;
+    text-transform: none;
+  }
+
+  .energia-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+  .energia-axis-control {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 8px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .energia-axis-control .ymax-wrap { width: 32px; }
+  .energia-axis-control .ymax-input {
+    width: 32px;
+    height: 18px;
+    padding: 1px 2px;
+    font-size: 11px;
   }
 
   .energia-wrap {
@@ -483,7 +509,7 @@
   }
   #no-data-energia { background: rgba(10,12,16,0.85); }
   #no-data-energia .nd-text {
-    font-size: 9px;
+    font-size: 10px;
     letter-spacing: 0.1em;
     text-align: center;
     padding: 0 10px;
@@ -535,8 +561,10 @@
     box-shadow: 0 0 10px rgba(255,60,0,.3);
   }
   #btn-default {
-    align-self: flex-start;
-    margin: 0 0 2px 4px;
+    display: block;
+    width: max-content;
+    align-self: flex-end;
+    margin: 0;
     padding: 4px 10px;
     border: 1px solid var(--muted);
     border-radius: 2px;

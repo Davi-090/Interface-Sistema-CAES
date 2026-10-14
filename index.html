@@ -78,21 +78,25 @@
   <div class="energia-panel">
     <div class="energia-header">
       <span class="energia-title"><span class="legend-dot" style="background:#FF3C00"></span>Energia Pot. Armazenada</span>
-      <div class="legend-item">X-Axis</div>
-      <div class="ymax-wrap" style="width:48px">
-        <input class="ymax-input" type="number" step="1" id="xaxis-e"
-          value="" onfocus="this.select()"
-          oninput="onEAxisChange('x', this.value)"
-          onchange="if(!this.value||this.value=='0'){this.value='';}"
-          placeholder="x" title="Pontos visíveis energia"/>
-      </div>
-      <div class="legend-item">Y-Axis</div>
-      <div class="ymax-wrap" style="width:48px">
-        <input class="ymax-input" type="number" step="1" min="0" id="ymax-e"
-          value="" onfocus="this.select()"
-          oninput="onEAxisChange('y', this.value)"
-          onchange="if(!this.value||this.value=='0'){this.value='';}"
-          placeholder="y" title="Y máximo energia"/>
+      <div class="energia-controls">
+        <label class="energia-axis-control">X-Axis
+          <span class="ymax-wrap">
+            <input class="ymax-input" type="number" step="1" id="xaxis-e"
+              value="" onfocus="this.select()"
+              oninput="onEAxisChange('x', this.value)"
+              onchange="if(!this.value||this.value=='0'){this.value='';}"
+              placeholder="x" title="Pontos visíveis energia"/>
+          </span>
+        </label>
+        <label class="energia-axis-control">Y-Axis
+          <span class="ymax-wrap">
+            <input class="ymax-input" type="number" step="1" min="0" id="ymax-e"
+              value="" onfocus="this.select()"
+              oninput="onEAxisChange('y', this.value)"
+              onchange="if(!this.value||this.value=='0'){this.value='';}"
+              placeholder="y" title="Y máximo energia"/>
+          </span>
+        </label>
       </div>
     </div>
     <div class="energia-wrap">
@@ -107,7 +111,6 @@
 
   <!-- Sidebar cards -->
   <div class="sidebar">
-    <button id="btn-default" onclick="resetMultipliers()" title="Restaurar multiplicadores padrão">DEFAULT</button>
     <div class="sidebar-cards-grid">
 
     <!-- Total -->
@@ -163,6 +166,7 @@
     </div>
 
     </div><!-- /sidebar-cards-grid -->
+    <button id="btn-default" onclick="resetMultipliers()" title="Restaurar multiplicadores padrão">DEFAULT</button>
 
     <!-- Relay -->
     <div class="relay-card" style="margin-top:10px;">
