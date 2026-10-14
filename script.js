@@ -63,8 +63,24 @@ function getView() {
   return { start: Math.max(0, start), end };
 }
 
+function parseAxisValue(val) {
+  const text = String(val).trim();
+  if (!/^\d+$/.test(text)) return 0;
+  const value = Number(text);
+  return Number.isSafeInteger(value) && value > 0 ? value : 0;
+}
+
+function commitAxisInput(axis, input) {
+  const value = parseAxisValue(input.value);
+  input.value = value > 0 ? String(value) : '';
+  if (axis === 'x') onXAxisChange(value);
+  else if (axis === 'y') onYMaxChange(value);
+  else if (axis === 'energia-x') onEAxisChange('x', value);
+  else if (axis === 'energia-y') onEAxisChange('y', value);
+}
+
 function onXAxisChange(val) {
-  const n = Math.max(0, parseInt(val, 10) || 0);
+  const n = parseAxisValue(val);
   X_AXIS = n;
   scrollOffset = 0; // volta ao vivo ao mudar a janela
   try { localStorage.setItem(LS_XAXIS, n); } catch(_) {}
@@ -540,7 +556,7 @@ chartWrap.addEventListener('touchend', () => { touchStartX = null; touchStartY =
 
 // ── Y-max: aceita 0 (automático) e inteiros positivos (fixo) ──
 function onYMaxChange(val) {
-  const n = Math.max(0, parseInt(val, 10) || 0);
+  const n = parseAxisValue(val);
   Y_MAX = n;
   yScrollOffset = 0;
   try { localStorage.setItem(LS_YMAX, Y_MAX); } catch(_) {}
@@ -680,7 +696,7 @@ document.getElementById('xaxis-e').value = E_X_AXIS > 0 ? E_X_AXIS : '';
 document.getElementById('ymax-e').value  = E_Y_MAX  > 0 ? E_Y_MAX  : '';
 
 function onEAxisChange(axis, val) {
-  const n = Math.max(0, parseInt(val, 10) || 0);
+  const n = parseAxisValue(val);
   if (axis === 'x') {
     E_X_AXIS = n;
     eScrollOffset = 0;

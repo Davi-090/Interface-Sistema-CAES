@@ -44,18 +44,20 @@
       <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
         <div class="legend-item">X-Axis</div>
         <div class="ymax-wrap">
-          <input class="ymax-input" type="number" step="1" id="xaxis-input"
+          <input class="ymax-input" type="number" step="1" min="1" id="xaxis-input"
             value="" onfocus="this.select()"
             oninput="onXAxisChange(this.value)"
-            onchange="if(!this.value||this.value=='0'){this.value='';}"
+            onchange="commitAxisInput('x', this)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('x',this)}"
             placeholder="x" title="Pontos visíveis (vazio = todos)"/>
         </div>
         <div class="legend-item">Y-Axis</div>
         <div class="ymax-wrap">
-          <input class="ymax-input" type="number" step="1" min="0" id="ymax-input"
+          <input class="ymax-input" type="number" step="1" min="1" id="ymax-input"
             value="" onfocus="this.select()"
             oninput="onYMaxChange(this.value)"
-            onchange="if(!this.value||this.value=='0'){this.value='';}"
+            onchange="commitAxisInput('y', this)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('y',this)}"
             placeholder="y" title="Y máximo (vazio = automático)"/>
         </div>
         <button id="btn-clear" onclick="clearChart()" title="Limpar gráfico (tecla 0 × 2)">CLEAR</button>
@@ -81,19 +83,21 @@
       <div class="energia-controls">
         <label class="energia-axis-control">X-Axis
           <span class="ymax-wrap">
-            <input class="ymax-input" type="number" step="1" id="xaxis-e"
+            <input class="ymax-input" type="number" step="1" min="1" id="xaxis-e"
               value="" onfocus="this.select()"
               oninput="onEAxisChange('x', this.value)"
-              onchange="if(!this.value||this.value=='0'){this.value='';}"
+              onchange="commitAxisInput('energia-x', this)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('energia-x',this)}"
               placeholder="x" title="Pontos visíveis energia"/>
           </span>
         </label>
         <label class="energia-axis-control">Y-Axis
           <span class="ymax-wrap">
-            <input class="ymax-input" type="number" step="1" min="0" id="ymax-e"
+            <input class="ymax-input" type="number" step="1" min="1" id="ymax-e"
               value="" onfocus="this.select()"
               oninput="onEAxisChange('y', this.value)"
-              onchange="if(!this.value||this.value=='0'){this.value='';}"
+              onchange="commitAxisInput('energia-y', this)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('energia-y',this)}"
               placeholder="y" title="Y máximo energia"/>
           </span>
         </label>
@@ -129,7 +133,7 @@
         <span>◈ Potência Usina</span>
         <div class="mult-wrap">
           ×<input class="mult-input" type="number" step="any" id="mult-usina"
-            value="0" onfocus="this.select()"
+          value="0"
             oninput="onMultChange('usina', this.value)" title="Multiplicador Usina"/>
         </div>
       </div>
@@ -143,7 +147,7 @@
         <span>◈ Potência Gerador</span>
         <div class="mult-wrap">
           ×<input class="mult-input" type="number" step="any" id="mult-gerador"
-            value="1000" onfocus="this.select()"
+            value="1000"
             oninput="onMultChange('gerador', this.value)" title="Multiplicador Gerador"/>
         </div>
       </div>
@@ -157,7 +161,7 @@
         <span>◈ Energia Pot. Armazenada</span>
         <div class="mult-wrap">
           ×<input class="mult-input" type="number" step="any" id="mult-energia"
-            value="20" onfocus="this.select()"
+            value="20"
             oninput="onMultChange('energia', this.value)" title="Multiplicador Energia"/>
         </div>
       </div>
