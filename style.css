@@ -404,6 +404,7 @@
     width: 3px;
     background: var(--accent, var(--green));
     box-shadow: 0 0 10px var(--accent, var(--green));
+    pointer-events: none;
   }
   .metric-card::after {
     content: '';
@@ -411,6 +412,7 @@
     top: 0; right: 0;
     width: 40px; height: 40px;
     background: radial-gradient(circle at top right, rgba(255,255,255,0.03), transparent 70%);
+    pointer-events: none;
   }
 
   .metric-card:hover {
