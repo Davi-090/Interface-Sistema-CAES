@@ -1,0 +1,78 @@
+@media (max-width: 767px) {
+
+    body {
+      height: auto;
+      min-height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    header {
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      gap: 10px;
+    }
+    .logo-sub   { display: block; font-size: 15px; }
+    .logo-icon  { width: 28px; height: 28px; }
+    .logo-icon svg { width: 14px; height: 14px; }
+
+    .header-status {
+      width: 100%;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    #timestamp         { display: none; }
+    #timestamp-mobile  { display: inline; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+    #btn-sim           { display: block; }
+    #btn-connect {
+      font-size: 10px;
+      padding: 7px 14px;
+    }
+
+    main {
+      flex-direction: column;
+      overflow: visible;
+    }
+
+    .chart-panel {
+      padding: 12px 12px 0;
+      height: 280px;
+      flex-shrink: 0;
+    }
+    .chart-header {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chart-title { font-size: 9px; }
+    .chart-legend { flex-wrap: wrap; gap: 8px; }
+    .legend-item  { font-size: 9px; }
+
+    .sidebar-col {
+      width: 100%;
+      flex: 0 0 auto;
+      border-left: none;
+      border-top: 1px solid var(--border);
+    }
+    #sidebar-resizer { display: none; }
+    #energia-resizer { display: none; }
+    .energia-panel {
+      flex: 0 0 220px;
+    }
+    .sidebar {
+      padding: 12px 12px 24px;
+      overflow: visible;
+    }
+
+    .sidebar > .metric-card { display: flex; flex-direction: column; }
+    .sidebar-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value { font-size: 22px; }
+    .relay-card   { padding: 10px 14px; }
+    .metric-bar   { margin-top: 6px; }
+    .mult-input   { width: 54px; font-size: 12px; padding: 3px 5px; }
+  }

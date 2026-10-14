@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema CAES</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="mobile-style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#12FF80" stroke-width="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-sub">Interface - Sistema CAES</div>      
+    </div>
+  </div>
+
+  <div class="header-status">
+    <span id="timestamp">--:--:--</span>
+    <span id="timestamp-mobile">--:--:--</span>
+    <button id="btn-connect">⬡    CONECTAR   ⬡</button>
+  </div>
+</header>
+
+<main>
+  <!-- ── CHART ── -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <!-- Legenda à esquerda -->
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#12FF80"></div>Potência Total</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00CFFF"></div>Usina</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FFB800"></div>Gerador</div>
+
+      </div>
+      <!-- Canto superior direito -->
+      <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <div class="legend-item">X-Axis</div>
+        <div class="ymax-wrap">
+          <input class="ymax-input" type="number" step="1" id="xaxis-input"
+            value="" onfocus="this.select()"
+            oninput="onXAxisChange(this.value)"
+            onchange="if(!this.value||this.value=='0'){this.value='';}"
+            placeholder="x" title="Pontos visíveis (vazio = todos)"/>
+        </div>
+        <div class="legend-item">Y-Axis</div>
+        <div class="ymax-wrap">
+          <input class="ymax-input" type="number" step="1" min="0" id="ymax-input"
+            value="" onfocus="this.select()"
+            oninput="onYMaxChange(this.value)"
+            onchange="if(!this.value||this.value=='0'){this.value='';}"
+            placeholder="y" title="Y máximo (vazio = automático)"/>
+        </div>
+        <button id="btn-clear" onclick="clearChart()" title="Limpar gráfico (tecla 0 × 2)">CLEAR</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div id="no-data">
+        <div class="nd-icon">◈</div>
+        <div class="nd-text">AGUARDANDO CONEXÃO COM ARDUINO</div>
+      </div>
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── SIDEBAR COLUMN ── -->
+  <button id="sidebar-resizer" type="button" role="separator" aria-label="Redimensionar painel lateral" aria-orientation="vertical" aria-valuemin="330" aria-valuenow="330" title="Arraste para redimensionar o painel lateral"></button>
+  <div class="sidebar-col">
+
+  <!-- ! Mini-gráfico Energia Pot. Armazenada -->
+  <div class="energia-panel">
+    <div class="energia-header">
+      <span class="energia-title"><span class="legend-dot" style="background:#FF3C00"></span>Energia Pot. Armazenada</span>
+      <div class="legend-item">X-Axis</div>
+      <div class="ymax-wrap" style="width:48px">
+        <input class="ymax-input" type="number" step="1" id="xaxis-e"
+          value="" onfocus="this.select()"
+          oninput="onEAxisChange('x', this.value)"
+          onchange="if(!this.value||this.value=='0'){this.value='';}"
+          placeholder="x" title="Pontos visíveis energia"/>
+      </div>
+      <div class="legend-item">Y-Axis</div>
+      <div class="ymax-wrap" style="width:48px">
+        <input class="ymax-input" type="number" step="1" min="0" id="ymax-e"
+          value="" onfocus="this.select()"
+          oninput="onEAxisChange('y', this.value)"
+          onchange="if(!this.value||this.value=='0'){this.value='';}"
+          placeholder="y" title="Y máximo energia"/>
+      </div>
+    </div>
+    <div class="energia-wrap">
+      <div id="no-data-energia">
+        <div class="nd-icon">◈</div>
+        <div class="nd-text">AGUARDANDO CONEXÃO COM ARDUINO</div>
+      </div>
+      <canvas id="chart-energia"></canvas>
+    </div>
+  </div>
+  <button id="energia-resizer" type="button" role="separator" aria-label="Redimensionar gráfico de energia armazenada" aria-orientation="horizontal" aria-valuemin="220" aria-valuenow="220" title="Arraste para redimensionar o gráfico de energia"></button>
+
+  <!-- Sidebar cards -->
+  <div class="sidebar">
+    <button id="btn-default" onclick="resetMultipliers()" title="Restaurar multiplicadores padrão">DEFAULT</button>
+    <div class="sidebar-cards-grid">
+
+    <!-- Total -->
+    <div class="metric-card" style="--accent:#12FF80">
+      <div class="metric-label">
+        <span>◈ Potência Total</span>
+      <div id="metric-sub">Usina + Gerador</div>
+      </div>
+      <div class="metric-value" id="val-total">—<span class="metric-unit">W</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="bar-total"></div></div>
+    </div>
+
+    <!-- Usina -->
+    <div class="metric-card" style="--accent:#00CFFF">
+      <div class="metric-label">
+        <span>◈ Potência Usina</span>
+        <div class="mult-wrap">
+          ×<input class="mult-input" type="number" step="any" id="mult-usina"
+            value="0" onfocus="this.select()"
+            oninput="onMultChange('usina', this.value)" title="Multiplicador Usina"/>
+        </div>
+      </div>
+      <div class="metric-value" id="val-usina">—<span class="metric-unit">W</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="bar-usina"></div></div>
+    </div>
+
+    <!-- Gerador -->
+    <div class="metric-card" style="--accent:#FFB800">
+      <div class="metric-label">
+        <span>◈ Potência Gerador</span>
+        <div class="mult-wrap">
+          ×<input class="mult-input" type="number" step="any" id="mult-gerador"
+            value="1000" onfocus="this.select()"
+            oninput="onMultChange('gerador', this.value)" title="Multiplicador Gerador"/>
+        </div>
+      </div>
+      <div class="metric-value" id="val-gerador">—<span class="metric-unit">W</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="bar-gerador"></div></div>
+    </div>
+
+    <!-- Energia -->
+    <div class="metric-card" style="--accent:#FF3C00">
+      <div class="metric-label">
+        <span>◈ Energia Pot. Armazenada</span>
+        <div class="mult-wrap">
+          ×<input class="mult-input" type="number" step="any" id="mult-energia"
+            value="20" onfocus="this.select()"
+            oninput="onMultChange('energia', this.value)" title="Multiplicador Energia"/>
+        </div>
+      </div>
+      <div class="metric-value" id="val-energia">—<span class="metric-unit">kJ</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="bar-energia"></div></div>
+    </div>
+
+    </div><!-- /sidebar-cards-grid -->
+
+    <!-- Relay -->
+    <div class="relay-card" style="margin-top:10px;">
+      <span class="relay-label">◈ GERADOR</span>
+      <span class="relay-state off" id="relay-state">OFF</span>
+    </div>
+
+    <!-- Botão simulação (só mobile) -->
+    <button id="btn-sim" onclick="toggleSim()">⬡   SIMULANDO   ⬡</button>
+
+    <!-- Raw sensors -->
+    <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;">
+      <div class="sidebar-title" style="border-bottom:none;padding-bottom:0;margin-bottom:8px;">SENSORES</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="background:var(--surface);border:1px solid var(--border);padding:10px 8px;text-align:center;">
+          <div style="font-size:9px;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">I₁ (A)</div>
+          <div class="metric-value" style="font-size:16px;color:var(--cyan)" id="raw-i1">—</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);padding:10px 8px;text-align:center;">
+          <div style="font-size:9px;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">I₂ (A)</div>
+          <div class="metric-value" style="font-size:16px;color:var(--amber)" id="raw-i2">—</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);padding:10px 8px;text-align:center;">
+          <div style="font-size:9px;letter-spacing:0.1em;color:var(--muted);margin-bottom:4px;">P (psi)</div>
+          <div class="metric-value" style="font-size:16px;color:var(--red)" id="raw-p">—</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /sidebar -->
+  </div><!-- /sidebar-col -->
+</main>
+
+<script src="script.js" defer></script>
+</body>
+</html>
