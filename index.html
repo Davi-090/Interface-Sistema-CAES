@@ -45,7 +45,7 @@
         <div class="legend-item">X-Axis</div>
         <div class="ymax-wrap">
           <input class="ymax-input" type="number" step="1" min="1" id="xaxis-input"
-            value="" onfocus="this.select()"
+            value=""
             oninput="onXAxisChange(this.value)"
             onchange="commitAxisInput('x', this)"
             onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('x',this)}"
@@ -54,7 +54,7 @@
         <div class="legend-item">Y-Axis</div>
         <div class="ymax-wrap">
           <input class="ymax-input" type="number" step="1" min="1" id="ymax-input"
-            value="" onfocus="this.select()"
+            value=""
             oninput="onYMaxChange(this.value)"
             onchange="commitAxisInput('y', this)"
             onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('y',this)}"
@@ -84,7 +84,7 @@
         <label class="energia-axis-control">X-Axis
           <span class="ymax-wrap">
             <input class="ymax-input" type="number" step="1" min="1" id="xaxis-e"
-              value="" onfocus="this.select()"
+              value=""
               oninput="onEAxisChange('x', this.value)"
               onchange="commitAxisInput('energia-x', this)"
               onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('energia-x',this)}"
@@ -94,7 +94,7 @@
         <label class="energia-axis-control">Y-Axis
           <span class="ymax-wrap">
             <input class="ymax-input" type="number" step="1" min="1" id="ymax-e"
-              value="" onfocus="this.select()"
+              value=""
               oninput="onEAxisChange('y', this.value)"
               onchange="commitAxisInput('energia-y', this)"
               onkeydown="if(event.key==='Enter'){event.preventDefault();commitAxisInput('energia-y',this)}"
