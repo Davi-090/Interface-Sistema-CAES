@@ -520,7 +520,7 @@ function setConnected(state, msg) {
   if (state) {
     btnConn.textContent = '⬡  DESCONECTAR  ⬡';
   } else {
-    btnConn.textContent = msg === 'ERRO' ? '⬡      ERRO     ⬡' : '⬡    CONECTAR   ⬡';
+    btnConn.textContent = msg === 'ERRO' ? '⬡      ERRO     ⬡' : '⬡    CONECTAR    ⬡';
   }
   btnConn.className = state ? 'connected' : '';
   updateNoData();
@@ -869,7 +869,7 @@ function toggleSim() {
     simInterval = null;
     const btn = document.getElementById('btn-sim');
     if (btn) { btn.textContent = '⬡   SIMULANDO   ⬡'; btn.className = ''; }
-    btnConn.textContent = '⬡    CONECTAR   ⬡';
+    btnConn.textContent = '⬡    CONECTAR    ⬡';
     btnConn.className = '';
   } else {
     simInterval = setInterval(simStep, 500);
