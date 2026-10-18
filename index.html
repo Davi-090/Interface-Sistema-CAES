@@ -41,7 +41,19 @@
 
       </div>
       <!-- Canto superior direito -->
-      <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;">
+        <div class="chart-mode-controls" aria-label="Opções dos gráficos">
+          <label class="chart-mode-toggle" for="scroll-fix-toggle" title="Mantém fixa a janela histórica dos dois gráficos enquanto chegam novas leituras">
+            <span>Scroll Fix</span>
+            <input id="scroll-fix-toggle" type="checkbox" role="switch" aria-label="Scroll Fix">
+            <span class="toggle-track" aria-hidden="true"></span>
+          </label>
+          <label class="chart-mode-toggle" for="info-fix-toggle" title="Mantém a linha do gráfico principal ligada à amostra selecionada">
+            <span>Info Fix</span>
+            <input id="info-fix-toggle" type="checkbox" role="switch" aria-label="Info Fix">
+            <span class="toggle-track" aria-hidden="true"></span>
+          </label>
+        </div>
         <div class="legend-item">X-Axis</div>
         <div class="ymax-wrap">
           <input class="ymax-input" type="number" step="1" min="1" id="xaxis-input"
@@ -67,6 +79,14 @@
       <div id="no-data">
         <div class="nd-icon">◈</div>
         <div class="nd-text">AGUARDANDO CONEXÃO COM ARDUINO</div>
+      </div>
+      <div id="chart-hover-line" aria-hidden="true"></div>
+      <div id="chart-tooltip" role="tooltip" aria-hidden="true">
+        <div class="chart-tooltip-time" data-tooltip-time>--:--:--</div>
+        <div class="chart-tooltip-row"><span>Potência Total</span><strong><span data-tooltip-value="total"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Potência Usina</span><strong><span data-tooltip-value="usina"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Potência Gerador</span><strong><span data-tooltip-value="gerador"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Energia Pot. Armazenada</span><strong><span data-tooltip-value="energia"></span> J</strong></div>
       </div>
       <canvas id="chart"></canvas>
     </div>

@@ -6,7 +6,8 @@ const history = {
   labels: [],
   c1:     [],
   c2:     [],
-  p:      []
+  p:      [],
+  times:  []
 };
 
 // Carrega histórico salvo
@@ -18,6 +19,9 @@ const history = {
       history.c1     = saved.c1.slice(-MAX_POINTS);
       history.c2     = saved.c2.slice(-MAX_POINTS);
       history.p      = saved.p.slice(-MAX_POINTS);
+      history.times  = Array.isArray(saved.times)
+        ? saved.times.slice(-MAX_POINTS)
+        : history.labels.map(label => label.length === 5 ? `--:${label}` : label);
     }
   } catch(_) {}
 })();
@@ -25,6 +29,8 @@ const history = {
 // ── Chart setup ─────────────────────────────────────────────
 const canvas = document.getElementById('chart');
 const ctx = canvas.getContext('2d');
+let chartPointLayout = null;
+let hoverHistoryIndex = null;
 let animFrame;
 
 function resizeCanvas() {
@@ -46,9 +52,21 @@ const COLORS = {
 
 // ── Scroll state ─────────────────────────────────────────────
 const LS_XAXIS = 'syscore_xaxis';
+const LS_SCROLL_FIX = 'caes_scroll_fix';
+const LS_INFO_FIX = 'caes_info_fix';
+function loadTogglePreference(key, defaultValue) {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved === null ? defaultValue : saved === 'true';
+  } catch (_) {
+    return defaultValue;
+  }
+}
 let X_AXIS       = Math.max(0, parseInt(localStorage.getItem(LS_XAXIS) || '0', 10));
 let scrollOffset  = 0;   // X scroll — pontos atrás no histórico
 let yScrollOffset = 0;   // Y scroll — deslocamento para cima do viewport
+let scrollFixEnabled = loadTogglePreference(LS_SCROLL_FIX, true);
+let infoFixEnabled = loadTogglePreference(LS_INFO_FIX, false);
 
 // Retorna a fatia do histórico atual conforme X_AXIS e scroll
 function getView() {
@@ -92,7 +110,11 @@ function drawChart() {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
-  if (history.labels.length < 2 || W === 0 || H === 0) return;
+  chartPointLayout = null;
+  if (history.labels.length < 2 || W === 0 || H === 0) {
+    syncHoveredChartPoint();
+    return;
+  }
 
   const pad = { top: 20, right: 20, bottom: 36, left: 64 };
   const plotW = W - pad.left - pad.right;
@@ -128,7 +150,7 @@ function drawChart() {
   // Indicador de scroll (quando não estamos ao vivo e há limite)
   if (scrollOffset > 0 && X_AXIS > 0) {
     ctx.save();
-    ctx.fillStyle = 'rgba(255,184,0,0.18)';
+    ctx.fillStyle = 'rgba(255,184,0,0.025)';
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
     ctx.save();
@@ -155,6 +177,11 @@ function drawChart() {
 
   // X labels
   const n = sliceLb.length;
+  if (n < 2) {
+    syncHoveredChartPoint();
+    return;
+  }
+  chartPointLayout = { start, count: n, left: pad.left, top: pad.top, width: plotW, height: plotH };
   const step = Math.max(1, Math.floor(n / 8));
   ctx.fillStyle = '#9AA5B8';
   ctx.textAlign = 'center';
@@ -194,17 +221,10 @@ function drawChart() {
     ctx.fill();
     ctx.restore();
 
-    ctx.save();
-    ctx.shadowColor = color; ctx.shadowBlur = 8;
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    clamped.forEach((v, i) => {
-      const x = pad.left + (i / (n - 1)) * plotW;
-      const y = pad.top + plotH - ((v - minVal) / range) * plotH;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.restore();
+    strokeCappedSeries(ctx, data, Y_MAX > 0, maxVal,
+      i => pad.left + (i / (n - 1)) * plotW,
+      v => pad.top + plotH - ((v - minVal) / range) * plotH,
+      color, 2, 8);
 
     // Ponto final (só se estiver ao vivo)
     if (scrollOffset === 0) {
@@ -218,6 +238,7 @@ function drawChart() {
       ctx.restore();
     }
   });
+  syncHoveredChartPoint();
 }
 
 function hexToRgba(hex, alpha) {
@@ -225,6 +246,61 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(hex.slice(3,5),16);
   const b = parseInt(hex.slice(5,7),16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function strokeCappedSeries(context, values, hasLimit, maxValue, xAt, yAt, color, lineWidth, shadowBlur) {
+  context.save();
+  context.shadowColor = color;
+  context.shadowBlur = shadowBlur;
+  context.strokeStyle = color;
+  context.lineWidth = lineWidth;
+  context.lineJoin = 'round';
+  context.lineCap = 'round';
+
+  let currentStyle = null;
+  let pathEnd = null;
+  const flush = () => {
+    if (currentStyle !== null) context.stroke();
+  };
+  const addSegment = (style, x1, y1, x2, y2) => {
+    if (style !== currentStyle || !pathEnd || pathEnd.x !== x1 || pathEnd.y !== y1) {
+      flush();
+      context.beginPath();
+      context.setLineDash(style === 'capped' ? [3, 4] : []);
+      context.moveTo(x1, y1);
+      currentStyle = style;
+    }
+    context.lineTo(x2, y2);
+    pathEnd = { x: x2, y: y2 };
+  };
+
+  for (let i = 0; i < values.length - 1; i++) {
+    const first = values[i];
+    const second = values[i + 1];
+    const x1 = xAt(i);
+    const x2 = xAt(i + 1);
+
+    if (!hasLimit || (first <= maxValue && second <= maxValue)) {
+      addSegment('normal', x1, yAt(first), x2, yAt(second));
+    } else if (first >= maxValue && second >= maxValue) {
+      const capY = yAt(maxValue);
+      addSegment('capped', x1, capY, x2, capY);
+    } else {
+      const crossing = (maxValue - first) / (second - first);
+      const crossingX = x1 + (x2 - x1) * crossing;
+      const capY = yAt(maxValue);
+      if (first < maxValue) {
+        addSegment('normal', x1, yAt(first), crossingX, capY);
+        addSegment('capped', crossingX, capY, x2, capY);
+      } else {
+        addSegment('capped', x1, capY, crossingX, capY);
+        addSegment('normal', crossingX, capY, x2, yAt(second));
+      }
+    }
+  }
+  flush();
+  context.setLineDash([]);
+  context.restore();
 }
 
 // ── UI helpers ───────────────────────────────────────────────
@@ -256,17 +332,28 @@ function setBar(id, val, max) {
   document.getElementById(id).style.width = pct + '%';
 }
 
-function pushHistory(label, c1, c2, p) {
+function pushHistory(label, c1, c2, p, time) {
+  if (scrollFixEnabled && scrollOffset > 0) scrollOffset++;
+  if (scrollFixEnabled && eScrollOffset > 0) eScrollOffset++;
   history.labels.push(label);
   history.c1.push(c1);
   history.c2.push(c2);
   history.p.push(p);
+  history.times.push(time || label);
   if (history.labels.length > MAX_POINTS) {
     history.labels.shift();
     history.c1.shift();
     history.c2.shift();
     history.p.shift();
+    history.times.shift();
+    if (hoverHistoryIndex !== null) hoverHistoryIndex--;
   }
+  scrollOffset = X_AXIS > 0
+    ? Math.min(scrollOffset, Math.max(0, history.labels.length - X_AXIS))
+    : 0;
+  eScrollOffset = E_X_AXIS > 0
+    ? Math.min(eScrollOffset, Math.max(0, history.labels.length - E_X_AXIS))
+    : 0;
   // Persiste no localStorage
   try {
     localStorage.setItem(LS_HISTORY, JSON.stringify(history));
@@ -391,14 +478,36 @@ function processPacket(data) {
   if (elTsMobile) elTsMobile.textContent = ts;
 
   // Salva os valores BRUTOS no histórico (sem multiplicadores)
-  pushHistory(ts.slice(3), c1, c2, p);
+  pushHistory(ts.slice(3), c1, c2, p, ts);
   updateNoData();
   drawChart();
 }
 
 // ── Serial (Web Serial API) ──────────────────────────────────
-let port, reader, readLoop;
+let port, reader, readLoop, serialPipe;
 let connected = false;
+let connecting = false;
+
+async function clearSerialResources() {
+  const activeReader = reader;
+  const activePort = port;
+  const activePipe = serialPipe;
+  reader = null;
+  port = null;
+  readLoop = null;
+  serialPipe = null;
+
+  if (activeReader) {
+    try { await activeReader.cancel(); } catch (_) {}
+    try { activeReader.releaseLock(); } catch (_) {}
+  }
+  if (activePipe) {
+    try { await activePipe; } catch (_) {}
+  }
+  if (activePort) {
+    try { await activePort.close(); } catch (_) {}
+  }
+}
 
 function updateNoData() {
   const show = history.labels.length === 0;
@@ -418,67 +527,79 @@ function setConnected(state, msg) {
 }
 
 async function connect() {
+  if (connecting || connected) return;
   if (!('serial' in navigator)) {
     alert('Web Serial API não suportada neste browser.\nUse o Google Chrome ou Microsoft Edge (versão recente).');
     return;
   }
+  connecting = true;
   try {
     port = await navigator.serial.requestPort();
     await port.open({ baudRate: 9600 });
     setConnected(true, 'CONECTADO');
 
     const decoder = new TextDecoderStream();
-    port.readable.pipeTo(decoder.writable);
+    serialPipe = port.readable.pipeTo(decoder.writable);
+    serialPipe.catch(() => {});
     const inputStream = decoder.readable;
     reader = inputStream.getReader();
+    const activeReader = reader;
 
     let buffer = '';
     readLoop = (async () => {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += value;
-        let idx;
-        while ((idx = buffer.indexOf('\n')) !== -1) {
-          const line = buffer.slice(0, idx).trim();
-          buffer = buffer.slice(idx + 1);
-          if (line.startsWith('{')) {
-            try {
-              const data = JSON.parse(line);
-              processPacket(data);
-            } catch {}
+      try {
+        while (true) {
+          const { value, done } = await activeReader.read();
+          if (done) break;
+          buffer += value;
+          let idx;
+          while ((idx = buffer.indexOf('\n')) !== -1) {
+            const line = buffer.slice(0, idx).trim();
+            buffer = buffer.slice(idx + 1);
+            if (line.startsWith('{')) {
+              try {
+                const data = JSON.parse(line);
+                processPacket(data);
+              } catch {}
+            }
           }
         }
+      } catch (e) {
+        if (connected) {
+          console.error('Conexão serial interrompida:', e);
+          await disconnect();
+        }
       }
+      if (connected) await disconnect();
     })();
   } catch (e) {
     console.error('Erro ao conectar:', e);
+    setConnected(false, 'DESCONECTADO');
+    await clearSerialResources();
     if (e.name === 'NotFoundError') {
       // usuário cancelou a seleção de porta — não é erro real
-      setConnected(false, 'DESCONECTADO');
       return;
     }
-    setConnected(false, 'ERRO');
     let msg = 'Falha ao conectar com o Arduino.\n\n';
     if (e.name === 'NetworkError' || /already open|failed to open/i.test(e.message)) {
       msg += 'A porta serial já está sendo usada por outro programa.\n\n'
            + 'Verifique se:\n'
            + '• O Arduino IDE (Serial Monitor / Serial Plotter) está fechado\n'
            + '• Nenhuma outra aba do navegador está conectada à porta\n'
-           + '• Nenhum outro software (PuTTY, etc.) está usando a porta COM';
+           + '• Nenhum outro software (PuTTY, etc.) está usando a porta COM\n\n'
+           + 'Depois de liberar a porta, clique em CONECTAR para tentar novamente.';
     } else {
       msg += 'Erro: ' + e.name + ' — ' + e.message;
     }
     alert(msg);
+  } finally {
+    connecting = false;
   }
 }
 
 async function disconnect() {
-  try {
-    if (reader)  { await reader.cancel(); reader = null; }
-    if (port)    { await port.close();    port   = null; }
-  } catch {}
   setConnected(false, 'DESCONECTADO');
+  await clearSerialResources();
 }
 
 btnConn.addEventListener('click', () => {
@@ -487,6 +608,132 @@ btnConn.addEventListener('click', () => {
 
 // ── Scroll: mouse wheel ──────────────────────────────────────
 const chartWrap = document.querySelector('.chart-wrap');
+const chartTooltip = document.getElementById('chart-tooltip');
+const chartHoverLine = document.getElementById('chart-hover-line');
+const scrollFixToggle = document.getElementById('scroll-fix-toggle');
+const infoFixToggle = document.getElementById('info-fix-toggle');
+scrollFixToggle.checked = scrollFixEnabled;
+infoFixToggle.checked = infoFixEnabled;
+let hoverPointerClientX = null;
+const tooltipTime = chartTooltip.querySelector('[data-tooltip-time]');
+const tooltipValues = {
+  total: chartTooltip.querySelector('[data-tooltip-value="total"]'),
+  usina: chartTooltip.querySelector('[data-tooltip-value="usina"]'),
+  gerador: chartTooltip.querySelector('[data-tooltip-value="gerador"]'),
+  energia: chartTooltip.querySelector('[data-tooltip-value="energia"]')
+};
+
+function hideChartTooltip() {
+  chartTooltip.style.display = 'none';
+  chartTooltip.setAttribute('aria-hidden', 'true');
+  chartHoverLine.style.display = 'none';
+  hoverHistoryIndex = null;
+  hoverPointerClientX = null;
+}
+
+function updateChartTooltipValues(historyIndex) {
+  const usina = history.c1[historyIndex] * MULT_POTENCIA_USINA;
+  const gerador = history.c2[historyIndex] * MULT_POTENCIA_GERADOR;
+  const energia = history.p[historyIndex] * MULT_ENERGIA_POTENCIAL;
+  tooltipTime.textContent = history.times[historyIndex] || '--:--:--';
+  tooltipValues.total.textContent = (usina + gerador).toFixed(2);
+  tooltipValues.usina.textContent = usina.toFixed(2);
+  tooltipValues.gerador.textContent = gerador.toFixed(2);
+  tooltipValues.energia.textContent = energia.toFixed(1);
+}
+
+function positionHoverLine() {
+  const layout = chartPointLayout;
+  if (hoverHistoryIndex === null || !layout || hoverHistoryIndex < layout.start ||
+      hoverHistoryIndex >= layout.start + layout.count) {
+    chartHoverLine.style.display = 'none';
+    return;
+  }
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const wrapRect = chartWrap.getBoundingClientRect();
+  const point = hoverHistoryIndex - layout.start;
+  const pointX = canvasRect.left - wrapRect.left - chartWrap.clientLeft + layout.left +
+    (point / (layout.count - 1)) * layout.width;
+  const pointY = canvasRect.top - wrapRect.top - chartWrap.clientTop + layout.top;
+  chartHoverLine.style.left = `${pointX}px`;
+  chartHoverLine.style.top = `${pointY}px`;
+  chartHoverLine.style.height = `${layout.height}px`;
+  chartHoverLine.style.display = 'block';
+}
+
+function syncHoveredChartPoint() {
+  if (hoverHistoryIndex === null) {
+    chartHoverLine.style.display = 'none';
+    return;
+  }
+  if (!chartPointLayout) {
+    chartHoverLine.style.display = 'none';
+    return;
+  }
+  if (hoverHistoryIndex < 0 || hoverHistoryIndex >= history.labels.length) {
+    hideChartTooltip();
+    return;
+  }
+  if (!infoFixEnabled && hoverPointerClientX !== null && chartTooltip.style.display !== 'none') {
+    const canvasRect = canvas.getBoundingClientRect();
+    const pointerX = hoverPointerClientX - canvasRect.left;
+    if (pointerX < chartPointLayout.left || pointerX > chartPointLayout.left + chartPointLayout.width) {
+      chartHoverLine.style.display = 'none';
+      return;
+    }
+    const point = Math.round(((pointerX - chartPointLayout.left) / chartPointLayout.width) * (chartPointLayout.count - 1));
+    hoverHistoryIndex = chartPointLayout.start + point;
+  }
+  updateChartTooltipValues(hoverHistoryIndex);
+  positionHoverLine();
+}
+
+function showChartTooltip(e) {
+  const layout = chartPointLayout;
+  if (!layout || (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen')) {
+    hideChartTooltip();
+    return;
+  }
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const wrapRect = chartWrap.getBoundingClientRect();
+  const pointerX = e.clientX - canvasRect.left;
+  const pointerY = e.clientY - canvasRect.top;
+  if (pointerX < layout.left || pointerX > layout.left + layout.width ||
+      pointerY < layout.top || pointerY > layout.top + layout.height) {
+    hideChartTooltip();
+    return;
+  }
+
+  const point = Math.round(((pointerX - layout.left) / layout.width) * (layout.count - 1));
+  hoverHistoryIndex = layout.start + point;
+  hoverPointerClientX = e.clientX;
+  updateChartTooltipValues(hoverHistoryIndex);
+
+  chartTooltip.style.display = 'block';
+  chartTooltip.setAttribute('aria-hidden', 'false');
+  const wrapX = e.clientX - wrapRect.left - chartWrap.clientLeft;
+  const wrapY = e.clientY - wrapRect.top - chartWrap.clientTop;
+  const maxLeft = chartWrap.clientWidth - chartTooltip.offsetWidth - 6;
+  const maxTop = chartWrap.clientHeight - chartTooltip.offsetHeight - 6;
+  chartTooltip.style.left = `${Math.max(6, Math.min(maxLeft, wrapX + 14))}px`;
+  chartTooltip.style.top = `${Math.max(6, Math.min(maxTop, wrapY + 14))}px`;
+  positionHoverLine();
+}
+
+chartWrap.addEventListener('pointermove', showChartTooltip);
+chartWrap.addEventListener('pointerleave', hideChartTooltip);
+
+scrollFixToggle.addEventListener('change', () => {
+  scrollFixEnabled = scrollFixToggle.checked;
+  try { localStorage.setItem(LS_SCROLL_FIX, String(scrollFixEnabled)); } catch (_) {}
+});
+infoFixToggle.addEventListener('change', () => {
+  infoFixEnabled = infoFixToggle.checked;
+  try { localStorage.setItem(LS_INFO_FIX, String(infoFixEnabled)); } catch (_) {}
+  syncHoveredChartPoint();
+});
 
 chartWrap.addEventListener('wheel', (e) => {
   e.preventDefault();
@@ -569,7 +816,10 @@ function clearChart() {
   history.c1.length     = 0;
   history.c2.length     = 0;
   history.p.length      = 0;
+  history.times.length  = 0;
+  hideChartTooltip();
   scrollOffset  = 0;
+  eScrollOffset = 0;
   yScrollOffset = 0;
   try { localStorage.removeItem(LS_HISTORY); } catch(_) {}
 
@@ -760,7 +1010,7 @@ function drawEnergia() {
   // Scroll indicator
   if (eScrollOffset > 0 && E_X_AXIS > 0) {
     ctxE.save();
-    ctxE.fillStyle = 'rgba(255,184,0,0.12)';
+    ctxE.fillStyle = 'rgba(255,184,0,0.02)';
     ctxE.fillRect(0, 0, W, H);
     ctxE.restore();
     ctxE.save();
@@ -812,16 +1062,10 @@ function drawEnergia() {
   ctxE.fillStyle = 'rgba(255,60,0,0.07)'; ctxE.fill(); ctxE.restore();
 
   // Line
-  ctxE.save();
-  ctxE.shadowColor = color; ctxE.shadowBlur = 6;
-  ctxE.strokeStyle = color; ctxE.lineWidth = 1.5; ctxE.lineJoin = 'round';
-  ctxE.beginPath();
-  clamped.forEach((v, i) => {
-    const x = pad.left + (i / (n - 1)) * plotW;
-    const y = pad.top + plotH - ((v - minVal) / range) * plotH;
-    i === 0 ? ctxE.moveTo(x, y) : ctxE.lineTo(x, y);
-  });
-  ctxE.stroke(); ctxE.restore();
+  strokeCappedSeries(ctxE, dispE, E_Y_MAX > 0, maxVal,
+    i => pad.left + (i / (n - 1)) * plotW,
+    v => pad.top + plotH - ((v - minVal) / range) * plotH,
+    color, 1.5, 6);
 
   // Live dot
   if (eScrollOffset === 0) {

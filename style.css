@@ -228,6 +228,63 @@
     border-radius: 2px;
     overflow: hidden;
   }
+  .chart-mode-controls {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 12px;
+    margin-right: 8px;
+  }
+  .chart-mode-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 9px;
+    line-height: 16px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .chart-mode-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .toggle-track {
+    position: relative;
+    width: 25px;
+    height: 13px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--card);
+    transition: background .15s, border-color .15s;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform .15s, background .15s;
+  }
+  .chart-mode-toggle input:checked + .toggle-track {
+    border-color: var(--green-dim);
+    background: rgba(18,255,128,.14);
+  }
+  .chart-mode-toggle input:checked + .toggle-track::after {
+    transform: translateX(12px);
+    background: var(--green);
+  }
+  .chart-mode-toggle input:focus-visible + .toggle-track {
+    outline: 1px solid var(--green);
+    outline-offset: 2px;
+  }
   .chart-wrap::before {
     content: '';
     position: absolute; inset: 0;
@@ -240,6 +297,51 @@
 
   #timestamp-mobile { display: none; }
   #chart { width: 100%; height: 100%; display: block; }
+  #chart-hover-line {
+    display: none;
+    position: absolute;
+    z-index: 11;
+    width: 0;
+    border-left: 1px dashed rgba(18,255,128,0.7);
+    pointer-events: none;
+  }
+  #chart-tooltip {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    width: 220px;
+    max-width: calc(100% - 12px);
+    padding: 9px 11px;
+    border: 1px solid rgba(18,255,128,0.55);
+    border-radius: 2px;
+    background: rgba(10,12,16,0.88);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    pointer-events: none;
+    backdrop-filter: blur(3px);
+  }
+  .chart-tooltip-time {
+    padding-bottom: 5px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    color: var(--green);
+    font-size: 11px;
+    text-align: right;
+  }
+  .chart-tooltip-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 0;
+  }
+  .chart-tooltip-row strong { white-space: nowrap; }
+  .chart-tooltip-row [data-tooltip-value="total"] { color: var(--green); }
+  .chart-tooltip-row [data-tooltip-value="usina"] { color: var(--cyan); }
+  .chart-tooltip-row [data-tooltip-value="gerador"] { color: var(--amber); }
+  .chart-tooltip-row [data-tooltip-value="energia"] { color: var(--red); }
   /* ── Sidebar column (energia chart + cards) ── */
   .sidebar-col {
     width: var(--sidebar-width, 330px);
