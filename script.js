@@ -276,7 +276,7 @@ function pushHistory(label, c1, c2, p) {
 // ── Multiplicadores de cálculo ───────────────────────────────
 const LS_MULT = 'syscore_mult';
 const LS_YMAX = 'syscore_ymax';
-const MULT_DEFAULTS = { usina: 220, gerador: 180, energia: 0.42 };
+const MULT_DEFAULTS = { usina: 220, gerador: 180, energia: 420 };
 
 function _loadMult() {
   try {
