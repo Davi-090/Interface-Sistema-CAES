@@ -23,7 +23,6 @@
       <img class="brand-logo logo-white" src="Pictures/Mansueto_Logo_White.png" alt="">
       <img class="brand-logo logo-black" src="Pictures/Mansueto_Logo_Black.png" alt="">
     </div>
-    <br>
     <div class="logo-sub">Interface - Sistema CAES</div>      
   </div>
 
@@ -40,7 +39,12 @@
       </svg>
     </button>
     <button id="help-toggle" type="button" aria-label="Abrir índice de controles" title="Índice de controles">?</button>
-    <button id="btn-connect">⬡    CONECTAR    ⬡</button>
+    <button id="btn-connect">
+      <span class="connect-mark" aria-hidden="true">⬡</span>
+      <span class="connect-label">CONECTAR</span>
+      <span class="connect-mark" aria-hidden="true">⬡</span>
+    </button>
+    <button id="btn-sim" onclick="toggleSim()">SIMULAR</button>
   </div>
 </header>
 
@@ -113,7 +117,7 @@
   </div>
 
   <!-- ── SIDEBAR COLUMN ── -->
-  <button id="sidebar-resizer" type="button" role="separator" aria-label="Redimensionar painel lateral" aria-orientation="vertical" aria-valuemin="330" aria-valuenow="330" title="Arraste para redimensionar o painel lateral"></button>
+  <button id="sidebar-resizer" type="button" role="separator" aria-label="Redimensionar painel lateral" aria-orientation="vertical" aria-valuemin="334" aria-valuenow="334" title="Arraste para redimensionar o painel lateral"></button>
   <div class="sidebar-col">
 
   <!-- ! Mini-gráfico Energia Pot. Armazenada -->
@@ -217,9 +221,6 @@
       <span class="relay-label">◈ GERADOR</span>
       <span class="relay-state off" id="relay-state">OFF</span>
     </div>
-
-    <!-- Botão simulação (só mobile) -->
-    <button id="btn-sim" onclick="toggleSim()">⬡   SIMULANDO   ⬡</button>
 
     <!-- Raw sensors -->
     <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px;">

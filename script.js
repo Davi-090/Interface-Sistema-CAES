@@ -323,6 +323,7 @@ const elRelay   = document.getElementById('relay-state');
 const elTs      = document.getElementById('timestamp');
 const elNoData  = document.getElementById('no-data');
 const btnConn   = document.getElementById('btn-connect');
+const btnConnLabel = btnConn.querySelector('.connect-label');
 const themeToggle = document.getElementById('theme-toggle');
 const helpToggle = document.getElementById('help-toggle');
 const helpOverlay = document.getElementById('help-overlay');
@@ -564,11 +565,7 @@ function updateNoData() {
 
 function setConnected(state, msg) {
   connected = state;
-  if (state) {
-    btnConn.textContent = '⬡  DESCONECTAR  ⬡';
-  } else {
-    btnConn.textContent = msg === 'ERRO' ? '⬡      ERRO     ⬡' : '⬡    CONECTAR    ⬡';
-  }
+  btnConnLabel.textContent = state ? 'DESCONECTAR' : msg === 'ERRO' ? 'ERRO' : 'CONECTAR';
   btnConn.className = state ? 'connected' : '';
   updateNoData();
 }
@@ -796,7 +793,7 @@ linkChartsToggle.addEventListener('change', () => {
 });
 
 chartWrap.addEventListener('wheel', (e) => {
-  e.preventDefault();
+  const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (e.shiftKey) {
     // Shift + scroll → move eixo Y para cima/baixo
     const delta = Math.sign(e.deltaY);
@@ -810,13 +807,21 @@ chartWrap.addEventListener('wheel', (e) => {
     const yMaxBase = Y_MAX > 0 ? Y_MAX : dataMax;
     const step     = Math.max(1, Math.round(yMaxBase * 0.05));
     const maxYScroll = Math.max(0, Math.max(dataMax, yMaxBase) - yMaxBase);
+    if (mobileViewport && (maxYScroll === 0 || (e.deltaY > 0 ? yScrollOffset <= 0 : yScrollOffset >= maxYScroll))) return;
+    e.preventDefault();
     yScrollOffset  = Math.max(0, Math.min(maxYScroll, yScrollOffset - delta * step));
     if (chartLinkEnabled) eYScrollOffset = yScrollOffset;
   } else {
     // Scroll normal → move X (histórico)
-    if (X_AXIS === 0) return;
+    if (mobileViewport && Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
+    if (X_AXIS === 0) {
+      if (!mobileViewport) e.preventDefault();
+      return;
+    }
     const delta = Math.sign(e.deltaX || e.deltaY);
     const maxOffset = Math.max(0, history.labels.length - X_AXIS);
+    if (mobileViewport && (maxOffset === 0 || (delta > 0 ? scrollOffset >= maxOffset : scrollOffset <= 0))) return;
+    e.preventDefault();
     scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + delta * 3));
     if (chartLinkEnabled) eScrollOffset = scrollOffset;
   }
@@ -832,9 +837,9 @@ chartWrap.addEventListener('touchstart', (e) => {
 
 chartWrap.addEventListener('touchmove', (e) => {
   if (touchStartX === null) return;
-  e.preventDefault();
   const dx = touchStartX - e.touches[0].clientX;
   const dy = touchStartY - e.touches[0].clientY;
+  const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
 
   if (Math.abs(dy) > Math.abs(dx)) {
     // Swipe vertical → Y scroll
@@ -847,6 +852,8 @@ chartWrap.addEventListener('touchmove', (e) => {
     const yMaxBase = Y_MAX > 0 ? Y_MAX : dataMax;
     const step     = Math.max(1, Math.round(yMaxBase * 0.02));
     const maxYScroll = Math.max(0, Math.max(dataMax, yMaxBase) - yMaxBase);
+    if (mobileViewport && (maxYScroll === 0 || (dy > 0 ? yScrollOffset >= maxYScroll : yScrollOffset <= 0))) return;
+    e.preventDefault();
     // dy > 0 = dedo subiu = queremos ver mais para cima
     yScrollOffset  = Math.max(0, Math.min(maxYScroll, yScrollOffset + Math.sign(dy) * step));
     if (chartLinkEnabled) eYScrollOffset = yScrollOffset;
@@ -854,6 +861,8 @@ chartWrap.addEventListener('touchmove', (e) => {
     // Swipe horizontal → X scroll
     if (X_AXIS === 0 || Math.abs(dx) < 5) return;
     const maxOffset = Math.max(0, history.labels.length - X_AXIS);
+    if (mobileViewport && (maxOffset === 0 || (dx > 0 ? scrollOffset >= maxOffset : scrollOffset <= 0))) return;
+    e.preventDefault();
     scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + Math.sign(dx) * 2));
     if (chartLinkEnabled) eScrollOffset = scrollOffset;
   }
@@ -934,15 +943,15 @@ function toggleSim() {
     clearInterval(simInterval);
     simInterval = null;
     const btn = document.getElementById('btn-sim');
-    if (btn) { btn.textContent = '⬡   SIMULANDO   ⬡'; btn.className = ''; }
-    btnConn.textContent = '⬡    CONECTAR    ⬡';
+    if (btn) { btn.textContent = 'SIMULAR'; btn.className = ''; }
+    btnConnLabel.textContent = 'CONECTAR';
     btnConn.className = '';
   } else {
     simInterval = setInterval(simStep, 500);
     simStep();
     const btn = document.getElementById('btn-sim');
-    if (btn) { btn.textContent = '⬡ PARAR SIM ⬡'; btn.className = 'simulating'; }
-    btnConn.textContent = '⬡   SIMULANDO   ⬡';
+    if (btn) { btn.textContent = 'PARAR'; btn.className = 'simulating'; }
+    btnConnLabel.textContent = 'SIMULANDO';
     btnConn.className = 'simulating';
   }
 }
@@ -1076,7 +1085,10 @@ function drawEnergia() {
   noDataOverlay.style.pointerEvents = showNoData ? 'auto' : 'none';
   if (history.labels.length < 2 || W === 0 || H === 0) return;
 
-  const pad = { top: 14, right: 16, bottom: 24, left: 38 };
+  const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
+  const pad = mobileLayout
+    ? { top: 20, right: 20, bottom: 36, left: 64 }
+    : { top: 14, right: 16, bottom: 24, left: 38 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
 
@@ -1112,24 +1124,24 @@ function drawEnergia() {
 
   // Grid
   ctxE.strokeStyle = getThemeColor('--chart-grid', 'rgba(42,48,64,0.8)'); ctxE.lineWidth = 1;
-  const gridLines = 4;
+  const gridLines = mobileLayout ? 5 : 4;
   for (let i = 0; i <= gridLines; i++) {
     const y = pad.top + plotH - (i / gridLines) * plotH;
     ctxE.beginPath(); ctxE.moveTo(pad.left, y); ctxE.lineTo(pad.left + plotW, y); ctxE.stroke();
     const lbl = (minVal + (i / gridLines) * range).toFixed(1);
-    ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.font = '9px "Share Tech Mono"';
+    ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.font = `${mobileLayout ? 11 : 9}px "Share Tech Mono"`;
     ctxE.textAlign = 'right'; ctxE.fillText(lbl, pad.left - 4, y + 3);
   }
 
   // X labels
   const n = sliceLb.length;
   if (n < 2) return;
-  const step = Math.max(1, Math.floor(n / 5));
-  ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.textAlign = 'center'; ctxE.font = '9px "Share Tech Mono"';
+  const step = Math.max(1, Math.floor(n / (mobileLayout ? 8 : 5)));
+  ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.textAlign = 'center'; ctxE.font = `${mobileLayout ? 11 : 9}px "Share Tech Mono"`;
   sliceLb.forEach((lbl, i) => {
     if (i % step === 0) {
       const x = pad.left + (i / (n - 1)) * plotW;
-      ctxE.fillText(lbl, x, H - 5);
+      ctxE.fillText(lbl, x, H - (mobileLayout ? 8 : 5));
     }
   });
 
@@ -1173,19 +1185,28 @@ function drawEnergia() {
 const energiaWrap = document.querySelector('.energia-wrap');
 
 energiaWrap.addEventListener('wheel', (e) => {
-  e.preventDefault();
+  const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (e.shiftKey) {
     const allVals  = history.p.map(v => v * MULT_ENERGIA_POTENCIAL);
     const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
     const eYBase   = E_Y_MAX > 0 ? E_Y_MAX : dataMax;
     const step     = Math.max(1, Math.round(eYBase * 0.05));
     const maxScroll = Math.max(0, Math.max(dataMax, eYBase) - eYBase);
+    if (mobileViewport && (maxScroll === 0 || (e.deltaY > 0 ? eYScrollOffset <= 0 : eYScrollOffset >= maxScroll))) return;
+    e.preventDefault();
     eYScrollOffset = Math.max(0, Math.min(maxScroll, eYScrollOffset - Math.sign(e.deltaY) * step));
     if (chartLinkEnabled) yScrollOffset = eYScrollOffset;
   } else {
-    if (E_X_AXIS === 0) return;
+    if (mobileViewport && Math.abs(e.deltaY) > Math.abs(e.deltaX)) return;
+    if (E_X_AXIS === 0) {
+      if (!mobileViewport) e.preventDefault();
+      return;
+    }
     const maxOffset = Math.max(0, history.labels.length - E_X_AXIS);
-    eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset + Math.sign(e.deltaX || e.deltaY) * 3));
+    const delta = Math.sign(e.deltaX || e.deltaY);
+    if (mobileViewport && (maxOffset === 0 || (delta > 0 ? eScrollOffset >= maxOffset : eScrollOffset <= 0))) return;
+    e.preventDefault();
+    eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset + delta * 3));
     if (chartLinkEnabled) scrollOffset = eScrollOffset;
   }
   chartLinkEnabled ? drawChart() : drawEnergia();
@@ -1198,20 +1219,25 @@ energiaWrap.addEventListener('touchstart', (e) => {
 
 energiaWrap.addEventListener('touchmove', (e) => {
   if (eTouchX === null) return;
-  e.preventDefault();
   const dx = eTouchX - e.touches[0].clientX;
   const dy = eTouchY - e.touches[0].clientY;
+  const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (Math.abs(dy) > Math.abs(dx)) {
     const allVals  = history.p.map(v => v * MULT_ENERGIA_POTENCIAL);
     const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
     const eYBase   = E_Y_MAX > 0 ? E_Y_MAX : dataMax;
     const step     = Math.max(1, Math.round(eYBase * 0.02));
     const maxScroll = Math.max(0, Math.max(dataMax, eYBase) - eYBase);
+    if (Math.abs(dy) < 5) return;
+    if (mobileViewport && (maxScroll === 0 || (dy > 0 ? eYScrollOffset >= maxScroll : eYScrollOffset <= 0))) return;
+    e.preventDefault();
     eYScrollOffset = Math.max(0, Math.min(maxScroll, eYScrollOffset + Math.sign(dy) * step));
     if (chartLinkEnabled) yScrollOffset = eYScrollOffset;
   } else {
     if (E_X_AXIS === 0 || Math.abs(dx) < 5) return;
     const maxOffset = Math.max(0, history.labels.length - E_X_AXIS);
+    if (mobileViewport && (maxOffset === 0 || (dx > 0 ? eScrollOffset >= maxOffset : eScrollOffset <= 0))) return;
+    e.preventDefault();
     eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset + Math.sign(dx) * 2));
     if (chartLinkEnabled) scrollOffset = eScrollOffset;
   }
@@ -1230,7 +1256,7 @@ const sidebarWidthKey = 'caes_sidebar_width';
 const mainLayout = document.querySelector('main');
 const sidebarCol = document.querySelector('.sidebar-col');
 const sidebarResizer = document.getElementById('sidebar-resizer');
-const sidebarMinWidth = 330;
+const sidebarMinWidth = 334;
 
 function setSidebarWidth(width, save = false) {
   const maxWidth = Math.max(sidebarMinWidth, mainLayout.clientWidth - 338);

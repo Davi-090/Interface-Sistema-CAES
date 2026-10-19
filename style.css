@@ -26,10 +26,10 @@
     --bg:        #F8F9FA;
     --surface:   #FFFFFF;
     --card:      #F1F3F4;
-    --border:    #DADCE0;
+    --border:    #B8C0CC;
     --text:      #202124;
     --muted:     #5F6368;
-    --chart-grid: rgba(95,99,104,0.2);
+    --chart-grid: rgba(95,99,104,0.3);
     --chart-label: #5F6368;
     --main-pattern: rgba(26,115,232,0.04);
     --energy-pattern: rgba(234,67,53,0.035);
@@ -40,6 +40,9 @@
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  button:focus:not(:focus-visible) { outline: none; }
+  button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 
   body {
     background: var(--bg);
@@ -144,7 +147,11 @@
   .help-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
   .help-heading h2 { font: 600 16px var(--font-mono); color: var(--green); }
   #help-close { width: 30px; height: 30px; border-radius: 3px; font-size: 22px; line-height: 1; }
-  .help-content { max-height: calc(min(80vh, 760px) - 60px); overflow: auto; padding: 16px 18px 18px; }
+  .help-content { max-height: calc(min(80vh, 760px) - 60px); overflow: auto; padding: 16px 18px 18px; scrollbar-width: thin; scrollbar-color: var(--green-dim) var(--card); }
+  .help-content::-webkit-scrollbar { width: 8px; }
+  .help-content::-webkit-scrollbar-track { background: var(--card); }
+  .help-content::-webkit-scrollbar-thumb { border: 2px solid var(--card); border-radius: 6px; background: var(--green-dim); }
+  .help-content::-webkit-scrollbar-thumb:hover { background: var(--green); }
   .help-content h3 { margin: 16px 0 8px; color: var(--cyan); font: 600 12px var(--font-mono); text-transform: uppercase; }
   .help-content h3:first-child { margin-top: 0; }
   .help-content dl { display: grid; grid-template-columns: minmax(130px, 175px) 1fr; gap: 7px 14px; font-size: 12px; line-height: 1.5; }
@@ -165,12 +172,18 @@
 
   /* ── Connect button ── */
   #btn-connect {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     font-family: var(--font-display);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.2em;
     padding: 8px 12px;
-    min-width: 200px;
+    width: 180px;
+    min-width: 180px;
+    flex: 0 0 180px;
     border: 1px solid var(--green);
     background: rgba(18,255,128,0.06);
     color: var(--green);
@@ -180,7 +193,17 @@
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+  }
+  .connect-mark {
+    flex: 0 0 auto;
+    font-size: 1em;
+    letter-spacing: 0;
+  }
+  .connect-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
   }
   #btn-connect:hover:not(.connected):not(.simulating) {
     background: rgba(18,255,128,0.18);
@@ -251,13 +274,14 @@
     font-size: 13px;
     opacity: 0;
     transform: translate(-50%, -50%);
-    transition: opacity .15s, background .15s;
+    transition: opacity .15s, background .15s, color .15s;
   }
   #sidebar-resizer:hover::after,
   #sidebar-resizer:focus-visible::after,
   #sidebar-resizer.dragging::after {
     opacity: 1;
-    background: var(--green);
+    background: var(--surface);
+    color: var(--green);
   }
   #sidebar-resizer:focus-visible { outline: none; }
 
@@ -314,7 +338,7 @@
     align-items: center;
     gap: 6px;
     color: var(--muted);
-    font-size: 9px;
+    font-size: 11px;
     line-height: 16px;
     cursor: pointer;
     user-select: none;
@@ -360,7 +384,7 @@
   }
   .chart-wrap::before {
     content: '';
-    position: absolute; inset: 20px 20px 36px 64px;
+    position: absolute; inset: 20px 20px 24px 64px;
     background: 
       linear-gradient(var(--main-pattern) 1px, transparent 1px),
       linear-gradient(90deg, var(--main-pattern) 1px, transparent 1px);
@@ -417,8 +441,8 @@
   .chart-tooltip-row [data-tooltip-value="energia"] { color: var(--red); }
   /* ── Sidebar column (energia chart + cards) ── */
   .sidebar-col {
-    width: var(--sidebar-width, 330px);
-    flex: 0 0 var(--sidebar-width, 330px);
+    width: var(--sidebar-width, 334px);
+    flex: 0 0 var(--sidebar-width, 334px);
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--border);
@@ -491,7 +515,7 @@
     min-width: 0;
     white-space: nowrap;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 400;
     letter-spacing: 0.05em;
     color: var(--muted);
@@ -516,9 +540,10 @@
   .energia-axis-control .ymax-wrap { width: 32px; }
   .energia-axis-control .ymax-input {
     width: 32px;
-    height: 18px;
-    padding: 1px 2px;
+    height: 13px;
+    padding: 0 2px;
     font-size: 11px;
+    line-height: 11px;
   }
   .energia-axis-control .ymax-input:disabled {
     opacity: 0.5;
@@ -725,11 +750,11 @@
 
   #btn-clear {
     font-family: var(--font-display);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    line-height: 1.2;
-    padding: 4px 10px;
+    letter-spacing: 0.1em;
+    line-height: 1.1;
+    padding: 3px 8px;
     border: 1px solid var(--muted);
     background: transparent;
     color: var(--muted);
@@ -748,16 +773,16 @@
     width: max-content;
     align-self: flex-end;
     margin: 0;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border: 1px solid var(--muted);
     border-radius: 2px;
     background: transparent;
     color: var(--muted);
     font-family: var(--font-display);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    line-height: 1.2;
+    letter-spacing: 0.1em;
+    line-height: 1.1;
     cursor: pointer;
     transition: border-color .1s, color .1s, box-shadow .1s;
   }
@@ -820,6 +845,16 @@
   outline: none;
   transition: border-color .1s, box-shadow .1s;
   appearance: textfield;
+}
+
+:root[data-theme="light"] .mult-input,
+:root[data-theme="light"] .ymax-input {
+  border: 1px solid #A8B0BA;
+}
+
+:root[data-theme="light"] .mult-input:focus,
+:root[data-theme="light"] .ymax-input:focus {
+  border-color: var(--green-dim);
 }
 
 .ymax-input::-webkit-outer-spin-button,
