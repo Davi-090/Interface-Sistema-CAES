@@ -1027,6 +1027,7 @@ function syncLinkedChartAxes() {
 function setLinkedAxisInputs() {
   document.getElementById('xaxis-e').disabled = chartLinkEnabled;
   document.getElementById('ymax-e').disabled = chartLinkEnabled;
+  document.querySelector('.energia-controls').classList.toggle('is-linked', chartLinkEnabled);
 }
 
 if (chartLinkEnabled) syncLinkedChartAxes();

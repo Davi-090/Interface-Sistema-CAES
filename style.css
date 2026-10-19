@@ -73,7 +73,7 @@
     flex: 0 0 58px;
     display: flex; align-items: center; justify-content: center;
   }
-  .brand-logo { width: 76px; height: 76px; object-fit: contain; }
+  .brand-logo { width: 80px; height: 80px; object-fit: contain; }
   .logo-black { display: none; }
   :root[data-theme="light"] .logo-white { display: none; }
   :root[data-theme="light"] .logo-black { display: block; }
@@ -176,15 +176,15 @@
     color: var(--green);
     cursor: pointer;
     border-radius: 2px;
-    transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+    transition: background 0.1s, box-shadow 0.1s, color 0.1s;
     text-transform: uppercase;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  #btn-connect:hover {
+  #btn-connect:hover:not(.connected):not(.simulating) {
     background: rgba(18,255,128,0.18);
-    box-shadow: 0 0 16px rgba(18,255,128,0.4);
+    box-shadow: 0 0 8px rgba(18,255,128,0.25);
   }
   #btn-connect.connected {
     border-color: var(--red);
@@ -198,7 +198,11 @@
   }
   #btn-connect.simulating:hover {
     background: rgba(255,184,0,0.18);
-    box-shadow: 0 0 16px rgba(255,184,0,0.4);
+    box-shadow: 0 0 8px rgba(255,184,0,0.25);
+  }
+  #btn-connect.connected:hover {
+    background: rgba(255,60,0,0.14);
+    box-shadow: 0 0 8px rgba(255,60,0,0.22);
   }
 
   /* ── Main layout ── */
@@ -487,7 +491,7 @@
     min-width: 0;
     white-space: nowrap;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 400;
     letter-spacing: 0.05em;
     color: var(--muted);
@@ -520,6 +524,7 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  .energia-controls.is-linked { display: none; }
 
   .energia-wrap {
     flex: 1;
@@ -720,22 +725,23 @@
 
   #btn-clear {
     font-family: var(--font-display);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 0.15em;
-    padding: 5px 12px;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    padding: 4px 10px;
     border: 1px solid var(--muted);
     background: transparent;
     color: var(--muted);
     cursor: pointer;
     border-radius: 2px;
-    transition: border-color .2s, color .2s, box-shadow .2s;
+    transition: border-color .1s, color .1s, box-shadow .1s;
     flex-shrink: 0;
   }
   #btn-clear:hover {
     border-color: #ff3c00;
     color: #ff3c00;
-    box-shadow: 0 0 10px rgba(255,60,0,.3);
+    box-shadow: 0 0 5px rgba(255,60,0,.18);
   }
   #btn-default {
     display: block;
@@ -753,12 +759,12 @@
     letter-spacing: 0.12em;
     line-height: 1.2;
     cursor: pointer;
-    transition: border-color .2s, color .2s, box-shadow .2s;
+    transition: border-color .1s, color .1s, box-shadow .1s;
   }
   #btn-default:hover {
     border-color: var(--green);
     color: var(--green);
-    box-shadow: 0 0 10px rgba(18,255,128,.25);
+    box-shadow: 0 0 5px rgba(18,255,128,.16);
   }
   .mult-wrap {
     display: flex;
@@ -781,7 +787,7 @@
   padding: 4px;
   text-align: right;
   outline: none;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .1s, box-shadow .1s;
   appearance: textfield;
 }
 
@@ -792,9 +798,12 @@
 }
   .mult-input::-webkit-outer-spin-button,
   .mult-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .mult-input:hover {
+    box-shadow: 0 0 4px color-mix(in srgb, var(--accent, var(--green)) 32%, transparent);
+  }
   .mult-input:focus {
     border-color: var(--accent, var(--green));
-    box-shadow: 0 0 6px rgba(18,255,128,.25);
+    box-shadow: none;
   }
 
 .ymax-input {
@@ -809,7 +818,7 @@
   padding: 4px;
   text-align: right;
   outline: none;
-  transition: border-color .2s, box-shadow .2s;
+  transition: border-color .1s, box-shadow .1s;
   appearance: textfield;
 }
 
@@ -820,9 +829,10 @@
 }
   .ymax-input::-webkit-outer-spin-button,
   .ymax-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .ymax-input:hover { box-shadow: 0 0 4px rgba(18,255,128,.16); }
   .ymax-input:focus {
     border-color: var(--green);
-    box-shadow: 0 0 6px rgba(18,255,128,.25);
+    box-shadow: none;
   }
 
   /* ── Sim button (mobile sidebar) ── */
