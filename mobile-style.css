@@ -9,18 +9,19 @@
 
     header {
       flex-wrap: wrap;
-      padding: 10px 14px;
-      gap: 10px;
+      padding: 6px 14px;
+      gap: 4px 10px;
     }
     .logo-sub   { display: block; font-size: 15px; }
-    .logo-icon  { width: 42px; height: 42px; flex-basis: 42px; }
-    .brand-logo { width: 40px; height: 40px; }
+    .logo-icon  { width: 48px; height: 48px; flex-basis: 48px; }
+    .brand-logo { width: 60px; height: 60px; }
 
     .header-status {
       width: 100%;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
     }
+    #help-toggle { margin-left: -4px; }
     #timestamp         { display: none; }
     #timestamp-mobile  { display: inline; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
     #btn-sim           { display: block; }

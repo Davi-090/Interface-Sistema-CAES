@@ -56,7 +56,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 24px;
+    padding: 2px 24px;
     border-bottom: 1px solid var(--border);
     background: var(--surface);
     flex-shrink: 0;
@@ -69,11 +69,11 @@
     gap: 12px;
   }
   .logo-icon {
-    width: 50px; height: 50px;
-    flex: 0 0 50px;
+    width: 58px; height: 58px;
+    flex: 0 0 58px;
     display: flex; align-items: center; justify-content: center;
   }
-  .brand-logo { width: 48px; height: 48px; object-fit: contain; }
+  .brand-logo { width: 76px; height: 76px; object-fit: contain; }
   .logo-black { display: none; }
   :root[data-theme="light"] .logo-white { display: none; }
   :root[data-theme="light"] .logo-black { display: block; }
@@ -127,13 +127,16 @@
     cursor: pointer;
   }
   #help-toggle {
-    width: 30px;
-    height: 30px;
-    flex: 0 0 30px;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    margin-left: -18px;
+    border-color: transparent;
     border-radius: 50%;
-    font: 700 16px var(--font-mono);
+    font: 700 18px var(--font-mono);
   }
-  #help-toggle:hover, #help-close:hover { background: var(--card); }
+  #help-toggle:hover { background: rgba(95,99,104,0.14); }
+  #help-close:hover { background: var(--card); }
   #help-toggle:focus-visible, #help-close:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
   .help-overlay { display: none; position: fixed; z-index: 100; inset: 0; place-items: center; padding: 20px; background: rgba(0,0,0,.58); }
   .help-overlay.is-open { display: grid; }
@@ -300,7 +303,7 @@
     gap: 12px;
     margin-right: 8px;
   }
-  .axis-label { margin-left: 8px; }
+  .axis-label { margin-left: 20px; }
   .chart-mode-toggle {
     position: relative;
     display: inline-flex;
