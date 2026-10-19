@@ -54,6 +54,7 @@ const COLORS = {
 const LS_XAXIS = 'syscore_xaxis';
 const LS_SCROLL_FIX = 'caes_scroll_fix';
 const LS_INFO_FIX = 'caes_info_fix';
+const LS_LINK_CHARTS = 'caes_link_charts';
 function loadTogglePreference(key, defaultValue) {
   try {
     const saved = localStorage.getItem(key);
@@ -67,6 +68,7 @@ let scrollOffset  = 0;   // X scroll — pontos atrás no histórico
 let yScrollOffset = 0;   // Y scroll — deslocamento para cima do viewport
 let scrollFixEnabled = loadTogglePreference(LS_SCROLL_FIX, true);
 let infoFixEnabled = loadTogglePreference(LS_INFO_FIX, false);
+let chartLinkEnabled = loadTogglePreference(LS_LINK_CHARTS, false);
 
 // Retorna a fatia do histórico atual conforme X_AXIS e scroll
 function getView() {
@@ -101,7 +103,9 @@ function onXAxisChange(val) {
   const n = parseAxisValue(val);
   X_AXIS = n;
   scrollOffset = 0; // volta ao vivo ao mudar a janela
+  if (chartLinkEnabled) eScrollOffset = 0;
   try { localStorage.setItem(LS_XAXIS, n); } catch(_) {}
+  if (chartLinkEnabled) syncLinkedChartAxes();
   drawChart();
 }
 
@@ -162,14 +166,14 @@ function drawChart() {
   }
 
   // Grid
-  ctx.strokeStyle = 'rgba(42,48,64,0.8)';
+  ctx.strokeStyle = getThemeColor('--chart-grid', 'rgba(42,48,64,0.8)');
   ctx.lineWidth = 1;
   const gridLines = 5;
   for (let i = 0; i <= gridLines; i++) {
     const y = pad.top + plotH - (i / gridLines) * plotH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + plotW, y); ctx.stroke();
     const label = (minVal + (i / gridLines) * range).toFixed(1);
-    ctx.fillStyle = '#9AA5B8';
+    ctx.fillStyle = getThemeColor('--chart-label', '#9AA5B8');
     ctx.font = '11px "Share Tech Mono"';
     ctx.textAlign = 'right';
     ctx.fillText(label, pad.left - 8, y + 4);
@@ -183,7 +187,7 @@ function drawChart() {
   }
   chartPointLayout = { start, count: n, left: pad.left, top: pad.top, width: plotW, height: plotH };
   const step = Math.max(1, Math.floor(n / 8));
-  ctx.fillStyle = '#9AA5B8';
+  ctx.fillStyle = getThemeColor('--chart-label', '#9AA5B8');
   ctx.textAlign = 'center';
   ctx.font = '11px "Share Tech Mono"';
   sliceLb.forEach((lbl, i) => {
@@ -246,6 +250,10 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(hex.slice(3,5),16);
   const b = parseInt(hex.slice(5,7),16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function getThemeColor(variable, fallback) {
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim() || fallback;
 }
 
 function strokeCappedSeries(context, values, hasLimit, maxValue, xAt, yAt, color, lineWidth, shadowBlur) {
@@ -315,6 +323,45 @@ const elRelay   = document.getElementById('relay-state');
 const elTs      = document.getElementById('timestamp');
 const elNoData  = document.getElementById('no-data');
 const btnConn   = document.getElementById('btn-connect');
+const themeToggle = document.getElementById('theme-toggle');
+const helpToggle = document.getElementById('help-toggle');
+const helpOverlay = document.getElementById('help-overlay');
+const helpClose = document.getElementById('help-close');
+
+function closeHelp() {
+  helpOverlay.classList.remove('is-open');
+  helpOverlay.setAttribute('aria-hidden', 'true');
+  helpToggle.focus();
+}
+
+helpToggle.addEventListener('click', () => {
+  helpOverlay.classList.add('is-open');
+  helpOverlay.setAttribute('aria-hidden', 'false');
+  helpClose.focus();
+});
+helpClose.addEventListener('click', closeHelp);
+helpOverlay.addEventListener('click', (e) => {
+  if (e.target === helpOverlay) closeHelp();
+});
+document.addEventListener('keydown', (e) => {
+  if (helpOverlay.classList.contains('is-open') && e.key === 'Escape') closeHelp();
+});
+
+function updateThemeButton() {
+  const nextTheme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  const label = nextTheme === 'light' ? 'Ativar modo claro' : 'Ativar modo escuro';
+  themeToggle.setAttribute('aria-label', label);
+  themeToggle.title = label;
+}
+
+themeToggle.addEventListener('click', () => {
+  const nextTheme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = nextTheme;
+  try { localStorage.setItem('caes_color_theme', nextTheme); } catch (_) {}
+  updateThemeButton();
+  drawChart();
+});
+updateThemeButton();
 
 function setVal(el, val, decimals = 2) {
   const unit = el.querySelector('.metric-unit');
@@ -612,6 +659,7 @@ const chartTooltip = document.getElementById('chart-tooltip');
 const chartHoverLine = document.getElementById('chart-hover-line');
 const scrollFixToggle = document.getElementById('scroll-fix-toggle');
 const infoFixToggle = document.getElementById('info-fix-toggle');
+const linkChartsToggle = document.getElementById('link-charts-toggle');
 scrollFixToggle.checked = scrollFixEnabled;
 infoFixToggle.checked = infoFixEnabled;
 let hoverPointerClientX = null;
@@ -734,6 +782,18 @@ infoFixToggle.addEventListener('change', () => {
   try { localStorage.setItem(LS_INFO_FIX, String(infoFixEnabled)); } catch (_) {}
   syncHoveredChartPoint();
 });
+linkChartsToggle.checked = chartLinkEnabled;
+linkChartsToggle.addEventListener('change', () => {
+  chartLinkEnabled = linkChartsToggle.checked;
+  try { localStorage.setItem(LS_LINK_CHARTS, String(chartLinkEnabled)); } catch (_) {}
+  if (chartLinkEnabled) {
+    syncLinkedChartAxes();
+    eScrollOffset = scrollOffset;
+    eYScrollOffset = yScrollOffset;
+  }
+  setLinkedAxisInputs();
+  drawChart();
+});
 
 chartWrap.addEventListener('wheel', (e) => {
   e.preventDefault();
@@ -751,12 +811,14 @@ chartWrap.addEventListener('wheel', (e) => {
     const step     = Math.max(1, Math.round(yMaxBase * 0.05));
     const maxYScroll = Math.max(0, Math.max(dataMax, yMaxBase) - yMaxBase);
     yScrollOffset  = Math.max(0, Math.min(maxYScroll, yScrollOffset - delta * step));
+    if (chartLinkEnabled) eYScrollOffset = yScrollOffset;
   } else {
     // Scroll normal → move X (histórico)
     if (X_AXIS === 0) return;
     const delta = Math.sign(e.deltaX || e.deltaY);
     const maxOffset = Math.max(0, history.labels.length - X_AXIS);
     scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + delta * 3));
+    if (chartLinkEnabled) eScrollOffset = scrollOffset;
   }
   drawChart();
 }, { passive: false });
@@ -787,11 +849,13 @@ chartWrap.addEventListener('touchmove', (e) => {
     const maxYScroll = Math.max(0, Math.max(dataMax, yMaxBase) - yMaxBase);
     // dy > 0 = dedo subiu = queremos ver mais para cima
     yScrollOffset  = Math.max(0, Math.min(maxYScroll, yScrollOffset + Math.sign(dy) * step));
+    if (chartLinkEnabled) eYScrollOffset = yScrollOffset;
   } else {
     // Swipe horizontal → X scroll
     if (X_AXIS === 0 || Math.abs(dx) < 5) return;
     const maxOffset = Math.max(0, history.labels.length - X_AXIS);
     scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + Math.sign(dx) * 2));
+    if (chartLinkEnabled) eScrollOffset = scrollOffset;
   }
 
   touchStartX = e.touches[0].clientX;
@@ -806,7 +870,9 @@ function onYMaxChange(val) {
   const n = parseAxisValue(val);
   Y_MAX = n;
   yScrollOffset = 0;
+  if (chartLinkEnabled) eYScrollOffset = 0;
   try { localStorage.setItem(LS_YMAX, Y_MAX); } catch(_) {}
+  if (chartLinkEnabled) syncLinkedChartAxes();
   drawChart();
 }
 
@@ -885,6 +951,7 @@ function toggleSim() {
 let tabCount = 0, tabTimer = null;
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') {
+    if (helpOverlay.classList.contains('is-open')) return;
     e.preventDefault();
     tabCount++;
     clearTimeout(tabTimer);
@@ -900,6 +967,7 @@ document.addEventListener('keydown', (e) => {
 // ── Keyboard: double-0 = clear ────────────────────────────────
 let zeroCount = 0, zeroTimer = null;
 document.addEventListener('keydown', (e) => {
+  if (helpOverlay.classList.contains('is-open')) return;
   if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
   if (e.key === '1' && !e.repeat) {
     e.preventDefault();
@@ -945,7 +1013,27 @@ let eYScrollOffset = 0;
 document.getElementById('xaxis-e').value = E_X_AXIS > 0 ? E_X_AXIS : '';
 document.getElementById('ymax-e').value  = E_Y_MAX  > 0 ? E_Y_MAX  : '';
 
+function syncLinkedChartAxes() {
+  E_X_AXIS = X_AXIS;
+  E_Y_MAX = Y_MAX;
+  document.getElementById('xaxis-e').value = E_X_AXIS > 0 ? E_X_AXIS : '';
+  document.getElementById('ymax-e').value = E_Y_MAX > 0 ? E_Y_MAX : '';
+  try {
+    localStorage.setItem(LS_E_XAXIS, E_X_AXIS);
+    localStorage.setItem(LS_E_YMAX, E_Y_MAX);
+  } catch (_) {}
+}
+
+function setLinkedAxisInputs() {
+  document.getElementById('xaxis-e').disabled = chartLinkEnabled;
+  document.getElementById('ymax-e').disabled = chartLinkEnabled;
+}
+
+if (chartLinkEnabled) syncLinkedChartAxes();
+setLinkedAxisInputs();
+
 function onEAxisChange(axis, val) {
+  if (chartLinkEnabled) return;
   const n = parseAxisValue(val);
   if (axis === 'x') {
     E_X_AXIS = n;
@@ -1022,13 +1110,13 @@ function drawEnergia() {
   }
 
   // Grid
-  ctxE.strokeStyle = 'rgba(42,48,64,0.8)'; ctxE.lineWidth = 1;
+  ctxE.strokeStyle = getThemeColor('--chart-grid', 'rgba(42,48,64,0.8)'); ctxE.lineWidth = 1;
   const gridLines = 4;
   for (let i = 0; i <= gridLines; i++) {
     const y = pad.top + plotH - (i / gridLines) * plotH;
     ctxE.beginPath(); ctxE.moveTo(pad.left, y); ctxE.lineTo(pad.left + plotW, y); ctxE.stroke();
     const lbl = (minVal + (i / gridLines) * range).toFixed(1);
-    ctxE.fillStyle = '#9AA5B8'; ctxE.font = '9px "Share Tech Mono"';
+    ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.font = '9px "Share Tech Mono"';
     ctxE.textAlign = 'right'; ctxE.fillText(lbl, pad.left - 4, y + 3);
   }
 
@@ -1036,7 +1124,7 @@ function drawEnergia() {
   const n = sliceLb.length;
   if (n < 2) return;
   const step = Math.max(1, Math.floor(n / 5));
-  ctxE.fillStyle = '#9AA5B8'; ctxE.textAlign = 'center'; ctxE.font = '9px "Share Tech Mono"';
+  ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.textAlign = 'center'; ctxE.font = '9px "Share Tech Mono"';
   sliceLb.forEach((lbl, i) => {
     if (i % step === 0) {
       const x = pad.left + (i / (n - 1)) * plotW;
@@ -1092,12 +1180,14 @@ energiaWrap.addEventListener('wheel', (e) => {
     const step     = Math.max(1, Math.round(eYBase * 0.05));
     const maxScroll = Math.max(0, Math.max(dataMax, eYBase) - eYBase);
     eYScrollOffset = Math.max(0, Math.min(maxScroll, eYScrollOffset - Math.sign(e.deltaY) * step));
+    if (chartLinkEnabled) yScrollOffset = eYScrollOffset;
   } else {
     if (E_X_AXIS === 0) return;
     const maxOffset = Math.max(0, history.labels.length - E_X_AXIS);
     eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset + Math.sign(e.deltaX || e.deltaY) * 3));
+    if (chartLinkEnabled) scrollOffset = eScrollOffset;
   }
-  drawEnergia();
+  chartLinkEnabled ? drawChart() : drawEnergia();
 }, { passive: false });
 
 let eTouchX = null, eTouchY = null;
@@ -1117,13 +1207,15 @@ energiaWrap.addEventListener('touchmove', (e) => {
     const step     = Math.max(1, Math.round(eYBase * 0.02));
     const maxScroll = Math.max(0, Math.max(dataMax, eYBase) - eYBase);
     eYScrollOffset = Math.max(0, Math.min(maxScroll, eYScrollOffset + Math.sign(dy) * step));
+    if (chartLinkEnabled) yScrollOffset = eYScrollOffset;
   } else {
     if (E_X_AXIS === 0 || Math.abs(dx) < 5) return;
     const maxOffset = Math.max(0, history.labels.length - E_X_AXIS);
     eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset + Math.sign(dx) * 2));
+    if (chartLinkEnabled) scrollOffset = eScrollOffset;
   }
   eTouchX = e.touches[0].clientX; eTouchY = e.touches[0].clientY;
-  drawEnergia();
+  chartLinkEnabled ? drawChart() : drawEnergia();
 }, { passive: false });
 
 energiaWrap.addEventListener('touchend', () => { eTouchX = null; eTouchY = null; });

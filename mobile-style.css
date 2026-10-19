@@ -13,13 +13,13 @@
       gap: 10px;
     }
     .logo-sub   { display: block; font-size: 15px; }
-    .logo-icon  { width: 28px; height: 28px; }
-    .logo-icon svg { width: 14px; height: 14px; }
+    .logo-icon  { width: 42px; height: 42px; flex-basis: 42px; }
+    .brand-logo { width: 40px; height: 40px; }
 
     .header-status {
       width: 100%;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
     }
     #timestamp         { display: none; }
     #timestamp-mobile  { display: inline; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
@@ -27,6 +27,8 @@
     #btn-connect {
       font-size: 10px;
       padding: 7px 14px;
+      min-width: 0;
+      flex: 0 1 200px;
     }
 
     main {

@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema CAES</title>
+<script>
+  try {
+    document.documentElement.dataset.theme = localStorage.getItem('caes_color_theme') === 'light' ? 'light' : 'dark';
+  } catch (_) {
+    document.documentElement.dataset.theme = 'dark';
+  }
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="mobile-style.css">
@@ -13,9 +20,8 @@
 <header>
   <div class="logo">
     <div class="logo-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#12FF80" stroke-width="2">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
+      <img class="brand-logo logo-white" src="Pictures/Mansueto_Logo_White.png" alt="">
+      <img class="brand-logo logo-black" src="Pictures/Mansueto_Logo_Black.png" alt="">
     </div>
     <div>
       <div class="logo-sub">Interface - Sistema CAES</div>      
@@ -25,6 +31,16 @@
   <div class="header-status">
     <span id="timestamp">--:--:--</span>
     <span id="timestamp-mobile">--:--:--</span>
+    <button id="theme-toggle" type="button" aria-label="Ativar modo claro" title="Ativar modo claro">
+      <svg class="theme-icon icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path>
+      </svg>
+      <svg class="theme-icon icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"></path>
+      </svg>
+    </button>
+    <button id="help-toggle" type="button" aria-label="Abrir índice de controles" title="Índice de controles">?</button>
     <button id="btn-connect">⬡    CONECTAR    ⬡</button>
   </div>
 </header>
@@ -53,8 +69,13 @@
             <input id="info-fix-toggle" type="checkbox" role="switch" aria-label="Info Fix">
             <span class="toggle-track" aria-hidden="true"></span>
           </label>
+          <label class="chart-mode-toggle" for="link-charts-toggle" title="Sincroniza eixos e posição dos dois gráficos">
+            <span>Link</span>
+            <input id="link-charts-toggle" type="checkbox" role="switch" aria-label="Link">
+            <span class="toggle-track" aria-hidden="true"></span>
+          </label>
         </div>
-        <div class="legend-item">X-Axis</div>
+        <div class="legend-item axis-label">X-Axis</div>
         <div class="ymax-wrap">
           <input class="ymax-input" type="number" step="1" min="1" id="xaxis-input"
             value=""
@@ -222,6 +243,43 @@
   </div><!-- /sidebar -->
   </div><!-- /sidebar-col -->
 </main>
+
+<div id="help-overlay" class="help-overlay" aria-hidden="true">
+  <section class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title" tabindex="-1">
+    <div class="help-heading">
+      <h2 id="help-title">Índice de controles</h2>
+      <button id="help-close" type="button" aria-label="Fechar índice" title="Fechar">×</button>
+    </div>
+    <div class="help-content">
+      <h3>Gráficos</h3>
+      <dl>
+        <dt>Potência Total, Usina e Gerador</dt><dd>Mostra os valores de potência ao longo do tempo. Passe o mouse sobre o gráfico para ver os valores e o horário do ponto.</dd>
+        <dt>Energia Pot. Armazenada</dt><dd>Gráfico menor com o histórico de energia potencial armazenada.</dd>
+        <dt>X-Axis / Y-Axis</dt><dd>Define a janela horizontal de leituras e o limite vertical. Deixe vazio ou use 0 para o ajuste automático.</dd>
+        <dt>Scroll Fix</dt><dd>Ligado: preserva a posição do histórico quando chega uma nova leitura.</dd>
+        <dt>Info Fix</dt><dd>Ligado: mantém o ponto selecionado e sua linha de referência enquanto o gráfico atualiza.</dd>
+        <dt>Link</dt><dd>Vincula os eixos e a posição dos dois gráficos. O gráfico menor passa a usar os eixos do principal.</dd>
+        <dt>Scroll no gráfico</dt><dd>Use a roda para navegar pelo histórico; segure Shift enquanto rola para mover a visualização vertical. No celular, arraste horizontal ou verticalmente.</dd>
+      </dl>
+      <h3>Leituras e conexão</h3>
+      <dl>
+        <dt>Sol / Lua</dt><dd>Alterna entre os temas claro e escuro; a escolha fica salva neste navegador.</dd>
+        <dt>CONECTAR</dt><dd>Abre a seleção de uma porta serial para conectar ao Arduino. O horário no cabeçalho é atualizado continuamente.</dd>
+        <dt>Multiplicadores</dt><dd>Os campos × ajustam os fatores aplicados às leituras brutas antes da exibição nas unidades do projeto.</dd>
+        <dt>DEFAULT</dt><dd>Restaura os multiplicadores padrão.</dd>
+        <dt>Alças de redimensionamento</dt><dd>Arraste a divisória lateral para ajustar a largura da sidebar ou a divisória acima dos dados inferiores para ajustar a altura do gráfico menor. Os tamanhos ficam salvos.</dd>
+      </dl>
+      <h3>Teclas</h3>
+      <dl>
+        <dt><kbd>1</kbd></dt><dd>Restaura os multiplicadores padrão. Não atua enquanto um campo de texto ou número está em foco.</dd>
+        <dt><kbd>0</kbd> duas vezes</dt><dd>Limpa os gráficos. Não atua enquanto um campo de texto ou número está em foco.</dd>
+        <dt><kbd>Tab</kbd> duas vezes</dt><dd>Inicia ou interrompe a simulação. Dentro do índice, Tab navega pelos controles.</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Fecha este índice.</dd>
+      </dl>
+      <p class="help-dismiss-note">Clique fora desta janela ou pressione Esc para fechar.</p>
+    </div>
+  </section>
+</div>
 
 <script src="script.js" defer></script>
 </body>
