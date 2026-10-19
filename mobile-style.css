@@ -19,42 +19,57 @@
 
     .header-status {
       display: grid;
-      grid-template-columns: 36px 36px minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr);
       grid-template-rows: 34px 36px;
-      align-items: center;
+      align-items: start;
       width: 100%;
       gap: 6px;
     }
-    #help-toggle { grid-column: 1; grid-row: 2; margin: 0; }
-    #theme-toggle { grid-column: 2; grid-row: 2; }
+    .header-action-buttons {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      width: min(100%, 300px);
+    }
+    .header-meta-controls {
+      grid-column: 1;
+      grid-row: 2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    #help-toggle { order: 1; margin: 0; }
+    #theme-toggle { order: 2; }
     #timestamp         { display: none; }
-    #timestamp-mobile  { display: inline; grid-column: 3 / 5; grid-row: 2; justify-self: end; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+    #timestamp-mobile  { display: inline; order: 3; margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
     #btn-sim {
       display: flex;
-      grid-column: 3;
-      grid-row: 1;
       align-items: center;
       justify-content: center;
-      width: 100%;
+      flex: 1 1 0;
+      width: auto;
+      max-width: 146px;
       min-width: 0;
       height: 34px;
       margin: 0;
-      padding: 6px 4px;
+      padding: 6px 8px;
       font-size: 9px;
       letter-spacing: 0.08em;
-      flex: none;
     }
     #btn-connect {
-      grid-column: 4;
-      grid-row: 1;
-      width: 100%;
+      flex: 1 1 0;
+      width: auto;
+      max-width: 146px;
       min-width: 0;
       height: 34px;
-      padding: 6px 4px;
+      padding: 6px 8px;
       gap: 4px;
       font-size: 9px;
       letter-spacing: 0.08em;
-      flex: none;
     }
 
     main {

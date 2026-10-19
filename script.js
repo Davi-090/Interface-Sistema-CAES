@@ -647,6 +647,10 @@ async function disconnect() {
 }
 
 btnConn.addEventListener('click', () => {
+  if (simInterval) {
+    toggleSim();
+    return;
+  }
   connected ? disconnect() : connect();
 });
 
@@ -930,9 +934,9 @@ function simStep() {
   simState.c2  = Math.max(0, Math.min(30, simState.c2 + simState.dc2));
   simState.p   = Math.max(0, Math.min(200, simState.p  + simState.dp));
   processPacket({
-    corrente1: simState.c1.toFixed(2),
-    corrente2: simState.c2.toFixed(2),
-    pressao:   simState.p.toFixed(1),
+    corrente1: (simState.c1 / MULT_DEFAULTS.usina).toFixed(4),
+    corrente2: (simState.c2 / MULT_DEFAULTS.gerador).toFixed(4),
+    pressao:   (simState.p / MULT_DEFAULTS.energia).toFixed(4),
     rele: 'false',
   });
 }
@@ -943,14 +947,20 @@ function toggleSim() {
     clearInterval(simInterval);
     simInterval = null;
     const btn = document.getElementById('btn-sim');
-    if (btn) { btn.textContent = 'SIMULAR'; btn.className = ''; }
+    if (btn) {
+      btn.querySelector('.sim-label').textContent = 'SIMULAR';
+      btn.className = '';
+    }
     btnConnLabel.textContent = 'CONECTAR';
     btnConn.className = '';
   } else {
     simInterval = setInterval(simStep, 500);
     simStep();
     const btn = document.getElementById('btn-sim');
-    if (btn) { btn.textContent = 'PARAR'; btn.className = 'simulating'; }
+    if (btn) {
+      btn.querySelector('.sim-label').textContent = 'PARAR';
+      btn.className = 'simulating';
+    }
     btnConnLabel.textContent = 'SIMULANDO';
     btnConn.className = 'simulating';
   }
@@ -1259,7 +1269,7 @@ const sidebarResizer = document.getElementById('sidebar-resizer');
 const sidebarMinWidth = 334;
 
 function setSidebarWidth(width, save = false) {
-  const maxWidth = Math.max(sidebarMinWidth, mainLayout.clientWidth - 338);
+  const maxWidth = Math.max(sidebarMinWidth, Math.min(sidebarMinWidth * 2, mainLayout.clientWidth - 338));
   const nextWidth = Math.max(sidebarMinWidth, Math.min(maxWidth, width));
   sidebarCol.style.setProperty('--sidebar-width', `${nextWidth}px`);
   sidebarResizer.setAttribute('aria-valuenow', String(Math.round(nextWidth)));
