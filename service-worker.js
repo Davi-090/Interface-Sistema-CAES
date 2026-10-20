@@ -6,7 +6,7 @@ const APP_FILES = [
   './mobile-style.css',
   './script.js',
   './manifest.webmanifest',
-  './Pictures/Mansueto_Logo.png',
+  './Pictures/Aperture_Logo.png',
   './Pictures/Mansueto_Logo_White.png',
   './Pictures/Mansueto_Logo_Black.png',
   './Pictures/caes-icon-192.png',
