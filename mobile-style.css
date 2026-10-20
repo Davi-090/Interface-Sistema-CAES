@@ -1,5 +1,15 @@
 @media (max-width: 767px) {
 
+    .help-content dl {
+      grid-template-columns: minmax(0, 88px) minmax(0, 1fr);
+      gap: 7px 10px;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .help-content dt,
+    .help-content dd { min-width: 0; overflow-wrap: anywhere; }
+    .help-content dt { font-size: 10px; }
+
     body {
       height: auto;
       min-height: 100vh;
@@ -165,17 +175,22 @@
     #energia-resizer { display: none; }
     .energia-panel {
       flex: 0 0 auto;
+      flex-basis: auto !important;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
       height: auto;
       padding: 12px;
       gap: 8px;
-      overflow: visible;
+      overflow: hidden;
+      align-items: stretch;
     }
+    .energia-header,
+    .energia-wrap,
+    #mobile-energia-title { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
     .energia-wrap { flex: 0 0 220px; height: 220px; }
     .chart-wrap::before,
-    .energia-wrap::before { inset: 20px 20px 24px 45px; }
+    .energia-wrap::before { inset: 20px 20px 24px 58px; }
     #btn-sim.simulating {
       border-color: var(--muted);
       color: var(--muted);
@@ -191,9 +206,9 @@
       display: flex;
       justify-content: flex-start;
       width: 100%;
-      margin: 0 0 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
+      margin: 0;
+      padding-bottom: 0;
+      border: 0;
     }
     #mobile-chart-mode-controls .chart-mode-controls {
       flex-wrap: wrap;
@@ -206,6 +221,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
       margin-bottom: 8px;
     }
 

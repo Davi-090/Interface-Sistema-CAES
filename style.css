@@ -26,7 +26,7 @@
     --bg:        #E9ECEF;
     --surface:   #F3F4F5;
     --card:      #E3E6E8;
-    --border:    #B8C0CC;
+    --border:    #8F99A5;
     --text:      #202124;
     --muted:     #5F6368;
     --chart-grid: rgba(95,99,104,0.3);
@@ -178,7 +178,7 @@
   .help-content::-webkit-scrollbar-thumb:hover { background: var(--green); }
   .help-content h3 { margin: 16px 0 8px; color: var(--cyan); font: 600 12px var(--font-mono); text-transform: uppercase; }
   .help-content h3:first-child { margin-top: 0; }
-  .help-content dl { display: grid; grid-template-columns: minmax(130px, 175px) 1fr; gap: 7px 14px; font-size: 12px; line-height: 1.5; }
+  .help-content dl { display: grid; grid-template-columns: minmax(130px, 175px) minmax(0, 1fr); gap: 7px 14px; font-size: 12px; line-height: 1.5; }
   .help-content dt { color: var(--text); font-weight: 700; }
   .help-content dd { color: var(--muted); }
   .help-content kbd { padding: 1px 5px; border: 1px solid var(--border); border-radius: 2px; background: var(--card); color: var(--text); font: inherit; }
@@ -251,6 +251,9 @@
     background: rgba(255,60,0,0.14);
     box-shadow: 0 0 8px rgba(255,60,0,0.22);
   }
+  :root[data-theme="light"] #btn-connect { background: rgba(18,255,128,0.18); }
+  :root[data-theme="light"] #btn-connect.connected { background: rgba(255,60,0,0.16); }
+  :root[data-theme="light"] #btn-connect.simulating { background: rgba(255,184,0,0.18); }
 
   /* ── Main layout ── */
   main {
@@ -466,7 +469,7 @@
   }
   .chart-tooltip-row strong { white-space: nowrap; }
   .chart-tooltip-row [data-tooltip-value="total"] { color: var(--green); }
-  .chart-tooltip-row [data-tooltip-value="usina"] { color: var(--cyan); }
+  .chart-tooltip-row [data-tooltip-value="rede"] { color: var(--cyan); }
   .chart-tooltip-row [data-tooltip-value="gerador"] { color: var(--amber); }
   .chart-tooltip-row [data-tooltip-value="energia"] { color: var(--red); }
   /* ── Sidebar column (energia chart + cards) ── */
@@ -722,6 +725,8 @@
   }
   .relay-state.on  { color: var(--green); border-color: var(--green); background: rgba(18,255,128,0.1); box-shadow: 0 0 10px rgba(18,255,128,0.3); }
   .relay-state.off { color: var(--red);   border-color: var(--red);   background: rgba(255,60,0,0.1); }
+  :root[data-theme="light"] .relay-state.on { background: rgba(18,255,128,0.22); }
+  :root[data-theme="light"] .relay-state.off { background: rgba(255,60,0,0.18); }
 
   /* no-data overlay */
   #no-data,
@@ -880,7 +885,7 @@
 
 :root[data-theme="light"] .mult-input,
 :root[data-theme="light"] .ymax-input {
-  border: 1px solid #A8B0BA;
+  border: 1px solid #7E8995;
 }
 
 :root[data-theme="light"] .mult-input:focus,

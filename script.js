@@ -65,7 +65,7 @@ window.addEventListener('resize', drawChart);
 
 const COLORS = {
   total:   '#12FF80',
-  usina:   '#00CFFF',
+  rede:    '#00CFFF',
   gerador: '#FFB800',
   energia: '#FF3C00'
 };
@@ -143,7 +143,7 @@ function drawChart() {
   }
 
   const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
-  const pad = { top: 20, right: 20, bottom: 36, left: mobileLayout ? 45 : 64 };
+  const pad = { top: 20, right: 20, bottom: 36, left: mobileLayout ? 58 : 64 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
 
@@ -155,11 +155,11 @@ function drawChart() {
   const sliceC2 = slice(history.c2);
   const sliceLb = slice(history.labels);
 
-  const dispTotal   = sliceC1.map((v, i) => v * MULT_POTENCIA_USINA + sliceC2[i] * MULT_POTENCIA_GERADOR);
-  const dispUsina   = sliceC1.map(v => v * MULT_POTENCIA_USINA);
+  const dispTotal   = sliceC1.map((v, i) => v * MULT_POTENCIA_REDE + sliceC2[i] * MULT_POTENCIA_GERADOR);
+  const dispRede    = sliceC1.map(v => v * MULT_POTENCIA_REDE);
   const dispGerador = sliceC2.map(v => v * MULT_POTENCIA_GERADOR);
   // Y máximo base: fixo (Y_MAX > 0) ou automático (maior valor da janela)
-  const allVals   = [...dispTotal, ...dispUsina, ...dispGerador];
+  const allVals   = [...dispTotal, ...dispRede, ...dispGerador];
   const dataMax   = Math.max(...allVals, 1);
   const yMaxBase  = Y_MAX > 0 ? Y_MAX : dataMax;
   const yRange    = yMaxBase; // span visível no eixo Y = altura fixa
@@ -197,11 +197,17 @@ function drawChart() {
   for (let i = 0; i <= gridLines; i++) {
     const y = pad.top + plotH - (i / gridLines) * plotH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + plotW, y); ctx.stroke();
-    const label = (minVal + (i / gridLines) * range).toFixed(1);
+    const label = `${(minVal + (i / gridLines) * range).toFixed(1)}W`;
     ctx.fillStyle = getThemeColor('--chart-label', '#9AA5B8');
-    ctx.font = '11px "Share Tech Mono"';
-    ctx.textAlign = 'right';
-    ctx.fillText(label, pad.left - (mobileLayout ? 4 : 8), y + 4);
+    ctx.font = `${mobileLayout ? 10 : 11}px "Share Tech Mono"`;
+    const labelX = pad.left - (mobileLayout ? 4 : 8);
+    if (ctx.measureText(label).width > labelX - 2) {
+      ctx.textAlign = 'left';
+      ctx.fillText(label, 2, y + 4);
+    } else {
+      ctx.textAlign = 'right';
+      ctx.fillText(label, labelX, y + 4);
+    }
   }
 
   // X labels
@@ -211,21 +217,25 @@ function drawChart() {
     return;
   }
   chartPointLayout = { start, count: n, left: pad.left, top: pad.top, width: plotW, height: plotH };
-  const step = Math.max(1, Math.floor(n / 8));
+  const maxTicks = Math.max(2, Math.floor(plotW / (mobileLayout ? 64 : 58)));
+  const tickCount = Math.min(n, maxTicks);
+  const visibleLabels = new Set();
   ctx.fillStyle = getThemeColor('--chart-label', '#9AA5B8');
   ctx.textAlign = 'center';
   ctx.font = '11px "Share Tech Mono"';
-  sliceLb.forEach((lbl, i) => {
-    if (i % step === 0) {
-      const x = pad.left + (i / (n - 1)) * plotW;
-      ctx.fillText(lbl, x, H - 8);
-    }
-  });
+  for (let tick = 0; tick < tickCount; tick++) {
+    const i = Math.round(tick * (n - 1) / (tickCount - 1));
+    const label = sliceLb[i];
+    if (visibleLabels.has(label)) continue;
+    visibleLabels.add(label);
+    const x = pad.left + (i / (n - 1)) * plotW;
+    ctx.fillText(label, x, H - 8);
+  }
 
   // Séries
   const series = [
     { key: 'total',   data: dispTotal   },
-    { key: 'usina',   data: dispUsina   },
+    { key: 'rede',    data: dispRede    },
     { key: 'gerador', data: dispGerador }
   ];
 
@@ -338,7 +348,7 @@ function strokeCappedSeries(context, values, hasLimit, maxValue, xAt, yAt, color
 
 // ── UI helpers ───────────────────────────────────────────────
 const elTotal   = document.getElementById('val-total');
-const elUsina   = document.getElementById('val-usina');
+const elRede    = document.getElementById('val-rede');
 const elGerador = document.getElementById('val-gerador');
 const elEnergia = document.getElementById('val-energia');
 const elRaw1    = document.getElementById('raw-i1');
@@ -485,12 +495,13 @@ function pushHistory(label, c1, c2, p, time) {
 // ── Multiplicadores de cálculo ───────────────────────────────
 const LS_MULT = 'syscore_mult';
 const LS_YMAX = 'syscore_ymax';
-const MULT_DEFAULTS = { usina: 220, gerador: 180, energia: 420 };
+const MULT_DEFAULTS = { rede: 220, gerador: 180, energia: 420 };
 
 function _loadMult() {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_MULT));
-    if (saved) return saved;
+    // Preserva o multiplicador salvo antes da renomeação para Rede.
+    if (saved) return { ...saved, rede: saved.rede ?? saved.usina ?? MULT_DEFAULTS.rede };
   } catch(_) {}
   return { ...MULT_DEFAULTS };
 }
@@ -498,7 +509,7 @@ function _loadMult() {
 function _saveMult() {
   try {
     localStorage.setItem(LS_MULT, JSON.stringify({
-      usina:   MULT_POTENCIA_USINA,
+      rede:    MULT_POTENCIA_REDE,
       gerador: MULT_POTENCIA_GERADOR,
       energia: MULT_ENERGIA_POTENCIAL,
     }));
@@ -509,12 +520,12 @@ function _saveMult() {
 let Y_MAX = Math.max(0, parseInt(localStorage.getItem(LS_YMAX) || '0', 10) || 0);
 
 const _initMult = _loadMult();
-let MULT_POTENCIA_USINA    = _initMult.usina;
+let MULT_POTENCIA_REDE     = _initMult.rede;
 let MULT_POTENCIA_GERADOR  = _initMult.gerador;
 let MULT_ENERGIA_POTENCIAL = _initMult.energia;
 
 // Aplica os valores carregados nos inputs
-document.getElementById('mult-usina').value   = MULT_POTENCIA_USINA;
+document.getElementById('mult-rede').value    = MULT_POTENCIA_REDE;
 document.getElementById('mult-gerador').value = MULT_POTENCIA_GERADOR;
 document.getElementById('mult-energia').value = MULT_ENERGIA_POTENCIAL;
 document.getElementById('ymax-input').value   = Y_MAX  > 0 ? Y_MAX  : '';
@@ -523,7 +534,7 @@ document.getElementById('xaxis-input').value  = X_AXIS > 0 ? X_AXIS : '';
 function onMultChange(which, val) {
   const n = parseFloat(val);
   if (isNaN(n)) return;
-  if (which === 'usina')   MULT_POTENCIA_USINA    = n;
+  if (which === 'rede')    MULT_POTENCIA_REDE     = n;
   if (which === 'gerador') MULT_POTENCIA_GERADOR  = n;
   if (which === 'energia') MULT_ENERGIA_POTENCIAL = n;
   _saveMult();
@@ -531,24 +542,24 @@ function onMultChange(which, val) {
 }
 
 function resetMultipliers() {
-  MULT_POTENCIA_USINA = MULT_DEFAULTS.usina;
+  MULT_POTENCIA_REDE = MULT_DEFAULTS.rede;
   MULT_POTENCIA_GERADOR = MULT_DEFAULTS.gerador;
   MULT_ENERGIA_POTENCIAL = MULT_DEFAULTS.energia;
-  document.getElementById('mult-usina').value = MULT_POTENCIA_USINA;
+  document.getElementById('mult-rede').value = MULT_POTENCIA_REDE;
   document.getElementById('mult-gerador').value = MULT_POTENCIA_GERADOR;
   document.getElementById('mult-energia').value = MULT_ENERGIA_POTENCIAL;
   _saveMult();
 
   const lastIndex = history.labels.length - 1;
   if (lastIndex >= 0) {
-    const usina = history.c1[lastIndex] * MULT_POTENCIA_USINA;
+    const rede = history.c1[lastIndex] * MULT_POTENCIA_REDE;
     const gerador = history.c2[lastIndex] * MULT_POTENCIA_GERADOR;
-    setVal(elTotal, usina + gerador, 2);
-    setVal(elUsina, usina, 2);
+    setVal(elTotal, rede + gerador, 2);
+    setVal(elRede, rede, 2);
     setVal(elGerador, gerador, 2);
     setVal(elEnergia, history.p[lastIndex] * MULT_ENERGIA_POTENCIAL, 1);
-    setBar('bar-total', usina + gerador, 5000);
-    setBar('bar-usina', usina, 4000);
+    setBar('bar-total', rede + gerador, 5000);
+    setBar('bar-rede', rede, 4000);
     setBar('bar-gerador', gerador, 1000);
     setBar('bar-energia', history.p[lastIndex] * MULT_ENERGIA_POTENCIAL, 40000);
   }
@@ -561,9 +572,9 @@ function processPacket(data) {
   const p  = parseFloat(data.pressao)   || 0;
 
   // Multiplicadores (aplicados APENAS para exibição no gráfico)
-  const usina   = c1 * MULT_POTENCIA_USINA;
+  const rede    = c1 * MULT_POTENCIA_REDE;
   const gerador = c2 * MULT_POTENCIA_GERADOR;
-  const total   = usina + gerador;
+  const total   = rede + gerador;
   const energia = p  * MULT_ENERGIA_POTENCIAL;
 
   // Atualiza cards com valores calculados
@@ -575,7 +586,7 @@ function processPacket(data) {
   };
 
   fmt(elTotal,   total,   2);
-  fmt(elUsina,   usina,   2);
+  fmt(elRede,    rede,    2);
   fmt(elGerador, gerador, 2);
   fmt(elEnergia, energia, 1);
 
@@ -585,7 +596,7 @@ function processPacket(data) {
   elRawP.textContent = p.toFixed(1);
 
   setBar('bar-total',   total,   5000);
-  setBar('bar-usina',   usina,   4000);
+  setBar('bar-rede',    rede,    4000);
   setBar('bar-gerador', gerador, 1000);
   setBar('bar-energia', energia, 40000);
 
@@ -775,12 +786,12 @@ function hideChartTooltip() {
 }
 
 function updateTooltipValues(tooltip, historyIndex) {
-  const usina = history.c1[historyIndex] * MULT_POTENCIA_USINA;
+  const rede = history.c1[historyIndex] * MULT_POTENCIA_REDE;
   const gerador = history.c2[historyIndex] * MULT_POTENCIA_GERADOR;
   const energia = history.p[historyIndex] * MULT_ENERGIA_POTENCIAL;
   tooltip.querySelector('[data-tooltip-time]').textContent = history.times[historyIndex] || '--:--:--';
-  tooltip.querySelector('[data-tooltip-value="total"]').textContent = (usina + gerador).toFixed(2);
-  tooltip.querySelector('[data-tooltip-value="usina"]').textContent = usina.toFixed(2);
+  tooltip.querySelector('[data-tooltip-value="total"]').textContent = (rede + gerador).toFixed(2);
+  tooltip.querySelector('[data-tooltip-value="rede"]').textContent = rede.toFixed(2);
   tooltip.querySelector('[data-tooltip-value="gerador"]').textContent = gerador.toFixed(2);
   tooltip.querySelector('[data-tooltip-value="energia"]').textContent = energia.toFixed(1);
 }
@@ -930,8 +941,8 @@ chartWrap.addEventListener('wheel', (e) => {
     // delta > 0 = scroll down = desce viewport = yScrollOffset diminui
     // delta < 0 = scroll up   = sobe viewport  = yScrollOffset aumenta
     const allVals  = history.c1.map((v,i) =>
-      Math.max(v * MULT_POTENCIA_USINA + history.c2[i] * MULT_POTENCIA_GERADOR,
-               v * MULT_POTENCIA_USINA,
+      Math.max(v * MULT_POTENCIA_REDE + history.c2[i] * MULT_POTENCIA_GERADOR,
+               v * MULT_POTENCIA_REDE,
                history.c2[i] * MULT_POTENCIA_GERADOR));
     const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
     const yMaxBase = Y_MAX > 0 ? Y_MAX : dataMax;
@@ -1020,14 +1031,14 @@ function clearChart() {
   try { localStorage.removeItem(LS_HISTORY); } catch(_) {}
 
   // Zera os valores nos cards da sidebar
-  ['val-total','val-usina','val-gerador','val-energia'].forEach(id => {
+  ['val-total','val-rede','val-gerador','val-energia'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.firstChild.textContent = '—';
   });
   elRaw1.textContent = '—';
   elRaw2.textContent = '—';
   elRawP.textContent = '—';
-  ['bar-total','bar-usina','bar-gerador','bar-energia'].forEach(id => {
+  ['bar-total','bar-rede','bar-gerador','bar-energia'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.width = '0%';
   });
@@ -1051,7 +1062,7 @@ function simStep() {
   simState.c2  = Math.max(0, Math.min(30, simState.c2 + simState.dc2));
   simState.p   = Math.max(0, Math.min(200, simState.p  + simState.dp));
   processPacket({
-    corrente1: (simState.c1 / MULT_DEFAULTS.usina).toFixed(4),
+    corrente1: (simState.c1 / MULT_DEFAULTS.rede).toFixed(4),
     corrente2: (simState.c2 / MULT_DEFAULTS.gerador).toFixed(4),
     pressao:   (simState.p / MULT_DEFAULTS.energia).toFixed(4),
     rele: 'false',
@@ -1250,7 +1261,7 @@ function drawEnergia() {
 
   const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
   const pad = mobileLayout
-    ? { top: 20, right: 20, bottom: 36, left: 45 }
+    ? { top: 20, right: 20, bottom: 36, left: 58 }
     : { top: 14, right: 16, bottom: 24, left: 38 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
@@ -1293,9 +1304,14 @@ function drawEnergia() {
   for (let i = 0; i <= gridLines; i++) {
     const y = pad.top + plotH - (i / gridLines) * plotH;
     ctxE.beginPath(); ctxE.moveTo(pad.left, y); ctxE.lineTo(pad.left + plotW, y); ctxE.stroke();
-    const lbl = (minVal + (i / gridLines) * range).toFixed(1);
-    ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.font = `${mobileLayout ? 11 : 9}px "Share Tech Mono"`;
-    ctxE.textAlign = 'right'; ctxE.fillText(lbl, pad.left - 4, y + 3);
+    const lbl = `${(minVal + (i / gridLines) * range).toFixed(1)}J`;
+    ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.font = `${mobileLayout ? 10 : 9}px "Share Tech Mono"`;
+    const labelX = pad.left - 4;
+    if (ctxE.measureText(lbl).width > labelX - 2) {
+      ctxE.textAlign = 'left'; ctxE.fillText(lbl, 2, y + 3);
+    } else {
+      ctxE.textAlign = 'right'; ctxE.fillText(lbl, labelX, y + 3);
+    }
   }
 
   // X labels
@@ -1621,3 +1637,4 @@ window.addEventListener('resize', () => {
 // ── Initial draw ─────────────────────────────────────────────
 updateNoData();
 drawChart();
+requestAnimationFrame(drawChart);

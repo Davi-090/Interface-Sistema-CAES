@@ -70,7 +70,7 @@
       <div id="chart-legend-home">
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-dot" style="background:#12FF80"></div>Potência Total</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#00CFFF"></div>Usina</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00CFFF"></div>Rede</div>
           <div class="legend-item"><div class="legend-dot" style="background:#FFB800"></div>Gerador</div>
         </div>
       </div>
@@ -125,7 +125,7 @@
       <div id="chart-tooltip" class="chart-tooltip" role="tooltip" aria-hidden="true">
         <div class="chart-tooltip-time" data-tooltip-time>--:--:--</div>
         <div class="chart-tooltip-row"><span>Potência Total</span><strong><span data-tooltip-value="total"></span> W</strong></div>
-        <div class="chart-tooltip-row"><span>Potência Usina</span><strong><span data-tooltip-value="usina"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Potência da Rede</span><strong><span data-tooltip-value="rede"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Potência Gerador</span><strong><span data-tooltip-value="gerador"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Energia Pot. Armazenada</span><strong><span data-tooltip-value="energia"></span> J</strong></div>
       </div>
@@ -174,7 +174,7 @@
       <div id="energia-tooltip" class="chart-tooltip" role="tooltip" aria-hidden="true">
         <div class="chart-tooltip-time" data-tooltip-time>--:--:--</div>
         <div class="chart-tooltip-row"><span>Potência Total</span><strong><span data-tooltip-value="total"></span> W</strong></div>
-        <div class="chart-tooltip-row"><span>Potência Usina</span><strong><span data-tooltip-value="usina"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Potência da Rede</span><strong><span data-tooltip-value="rede"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Potência Gerador</span><strong><span data-tooltip-value="gerador"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Energia Pot. Armazenada</span><strong><span data-tooltip-value="energia"></span> J</strong></div>
       </div>
@@ -194,24 +194,24 @@
     <div class="metric-card" style="--accent:#12FF80">
       <div class="metric-label">
         <span>◈ Potência Total</span>
-      <div id="metric-sub">Usina + Gerador</div>
+      <div id="metric-sub">Rede + Gerador</div>
       </div>
       <div class="metric-value" id="val-total">—<span class="metric-unit">W</span></div>
       <div class="metric-bar"><div class="metric-bar-fill" id="bar-total"></div></div>
     </div>
 
-    <!-- Usina -->
+    <!-- Rede -->
     <div class="metric-card" style="--accent:#00CFFF">
       <div class="metric-label">
-        <span>◈ Potência Usina</span>
+        <span>◈ Potência da Rede</span>
         <div class="mult-wrap">
-          ×<input class="mult-input" type="number" step="any" id="mult-usina" enterkeyhint="done"
+          ×<input class="mult-input" type="number" step="any" id="mult-rede" enterkeyhint="done"
           value="0"
-            oninput="onMultChange('usina', this.value)" title="Multiplicador Usina"/>
+            oninput="onMultChange('rede', this.value)" title="Multiplicador da Rede"/>
         </div>
       </div>
-      <div class="metric-value" id="val-usina">—<span class="metric-unit">W</span></div>
-      <div class="metric-bar"><div class="metric-bar-fill" id="bar-usina"></div></div>
+      <div class="metric-value" id="val-rede">—<span class="metric-unit">W</span></div>
+      <div class="metric-bar"><div class="metric-bar-fill" id="bar-rede"></div></div>
     </div>
 
     <!-- Gerador -->
@@ -282,7 +282,7 @@
     <div class="help-content">
       <h3>Gráficos</h3>
       <dl>
-        <dt>Potência Total, Usina e Gerador</dt><dd>Mostra os valores de potência ao longo do tempo. Passe o mouse sobre o gráfico para ver os valores e o horário do ponto.</dd>
+        <dt>Potência Total, da Rede e do Gerador</dt><dd>Mostra os valores de potência ao longo do tempo. Passe o mouse sobre o gráfico para ver os valores e o horário do ponto.</dd>
         <dt>Energia Pot. Armazenada</dt><dd>Gráfico menor com o histórico de energia potencial armazenada.</dd>
         <dt>X-Axis / Y-Axis</dt><dd>Define a janela horizontal de leituras e o limite vertical. Deixe vazio ou use 0 para o ajuste automático.</dd>
         <dt>Scroll Fix</dt><dd>Ligado: preserva a posição do histórico quando chega uma nova leitura.</dd>
