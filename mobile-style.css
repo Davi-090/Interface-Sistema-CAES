@@ -44,8 +44,9 @@
     }
     #help-toggle { order: 1; margin: 0; }
     #theme-toggle { order: 2; }
+    #install-app { order: 3; }
     #timestamp         { display: none; }
-    #timestamp-mobile  { display: inline; order: 3; margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+    #timestamp-mobile  { display: inline; order: 4; margin-left: auto; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
     #btn-sim {
       display: flex;
       align-items: center;

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema CAES</title>
+<meta name="theme-color" content="#171717">
+<link rel="icon" type="image/png" href="Pictures/Mansueto_Logo.png">
+<link rel="manifest" href="manifest.webmanifest">
 <script>
   try {
     document.documentElement.dataset.theme = localStorage.getItem('caes_color_theme') === 'light' ? 'light' : 'dark';
@@ -40,6 +43,9 @@
         </svg>
       </button>
       <button id="help-toggle" type="button" aria-label="Abrir índice de controles" title="Índice de controles">?</button>
+      <button id="install-app" type="button" aria-label="Instalar Sistema CAES" title="Instalar Sistema CAES" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"></path></svg>
+      </button>
     </div>
     <div class="header-action-buttons">
       <button id="btn-connect">
@@ -70,6 +76,11 @@
       <!-- Canto superior direito -->
       <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;">
         <div class="chart-mode-controls" aria-label="Opções dos gráficos">
+          <label class="chart-mode-toggle" for="link-charts-toggle" title="Sincroniza eixos e posição dos dois gráficos">
+            <span>Link</span>
+            <input id="link-charts-toggle" type="checkbox" role="switch" aria-label="Link">
+            <span class="toggle-track" aria-hidden="true"></span>
+          </label>
           <label class="chart-mode-toggle" for="scroll-fix-toggle" title="Mantém fixa a janela histórica dos dois gráficos enquanto chegam novas leituras">
             <span>Scroll Fix</span>
             <input id="scroll-fix-toggle" type="checkbox" role="switch" aria-label="Scroll Fix">
@@ -78,11 +89,6 @@
           <label class="chart-mode-toggle" for="info-fix-toggle" title="Mantém a linha do gráfico principal ligada à amostra selecionada">
             <span>Info Fix</span>
             <input id="info-fix-toggle" type="checkbox" role="switch" aria-label="Info Fix">
-            <span class="toggle-track" aria-hidden="true"></span>
-          </label>
-          <label class="chart-mode-toggle" for="link-charts-toggle" title="Sincroniza eixos e posição dos dois gráficos">
-            <span>Link</span>
-            <input id="link-charts-toggle" type="checkbox" role="switch" aria-label="Link">
             <span class="toggle-track" aria-hidden="true"></span>
           </label>
         </div>
@@ -266,7 +272,7 @@
         <dt>X-Axis / Y-Axis</dt><dd>Define a janela horizontal de leituras e o limite vertical. Deixe vazio ou use 0 para o ajuste automático.</dd>
         <dt>Scroll Fix</dt><dd>Ligado: preserva a posição do histórico quando chega uma nova leitura.</dd>
         <dt>Info Fix</dt><dd>Ligado: mantém o ponto selecionado e sua linha de referência enquanto o gráfico atualiza.</dd>
-        <dt>Link</dt><dd>Vincula os eixos e a posição dos dois gráficos. O gráfico menor passa a usar os eixos do principal.</dd>
+        <dt>Link</dt><dd>Ligado por padrão: vincula os eixos e a posição dos dois gráficos. O gráfico menor usa os eixos do principal; ao desligar, recupera seus próprios limites salvos.</dd>
         <dt>Scroll no gráfico</dt><dd>Use a roda para navegar pelo histórico; segure Shift enquanto rola para mover a visualização vertical. No celular, arraste horizontal ou verticalmente.</dd>
       </dl>
       <h3>Leituras e conexão</h3>
@@ -275,6 +281,7 @@
         <dt>CONECTAR</dt><dd>Abre a seleção de uma porta serial para conectar ao Arduino. O horário no cabeçalho é atualizado continuamente.</dd>
         <dt>Multiplicadores</dt><dd>Os campos × ajustam os fatores aplicados às leituras brutas antes da exibição nas unidades do projeto.</dd>
         <dt>DEFAULT</dt><dd>Restaura os multiplicadores padrão.</dd>
+        <dt>Instalar / criar atalho</dt><dd>Use o menu do navegador para instalar o Sistema CAES ou criar um atalho. Em navegadores compatíveis, o botão de instalação inicia o processo diretamente.</dd>
         <dt>Alças de redimensionamento</dt><dd>Arraste a divisória lateral para ajustar a largura da sidebar ou a divisória acima dos dados inferiores para ajustar a altura do gráfico menor. Os tamanhos ficam salvos.</dd>
       </dl>
       <h3>Teclas</h3>

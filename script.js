@@ -68,7 +68,7 @@ let scrollOffset  = 0;   // X scroll — pontos atrás no histórico
 let yScrollOffset = 0;   // Y scroll — deslocamento para cima do viewport
 let scrollFixEnabled = loadTogglePreference(LS_SCROLL_FIX, true);
 let infoFixEnabled = loadTogglePreference(LS_INFO_FIX, false);
-let chartLinkEnabled = loadTogglePreference(LS_LINK_CHARTS, false);
+let chartLinkEnabled = loadTogglePreference(LS_LINK_CHARTS, true);
 
 // Retorna a fatia do histórico atual conforme X_AXIS e scroll
 function getView() {
@@ -325,6 +325,34 @@ const elNoData  = document.getElementById('no-data');
 const btnConn   = document.getElementById('btn-connect');
 const btnConnLabel = btnConn.querySelector('.connect-label');
 const themeToggle = document.getElementById('theme-toggle');
+const installButton = document.getElementById('install-app');
+let pendingInstallPrompt = null;
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' }).catch(() => {});
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  pendingInstallPrompt = event;
+  installButton.hidden = false;
+});
+
+installButton.addEventListener('click', async () => {
+  if (!pendingInstallPrompt) return;
+  pendingInstallPrompt.prompt();
+  await pendingInstallPrompt.userChoice;
+  pendingInstallPrompt = null;
+  installButton.hidden = true;
+});
+
+window.addEventListener('appinstalled', () => {
+  pendingInstallPrompt = null;
+  installButton.hidden = true;
+});
+
 const helpToggle = document.getElementById('help-toggle');
 const helpOverlay = document.getElementById('help-overlay');
 const helpClose = document.getElementById('help-close');
@@ -791,6 +819,8 @@ linkChartsToggle.addEventListener('change', () => {
     syncLinkedChartAxes();
     eScrollOffset = scrollOffset;
     eYScrollOffset = yScrollOffset;
+  } else {
+    restoreIndependentChartAxes();
   }
   setLinkedAxisInputs();
   drawChart();
@@ -1037,10 +1067,15 @@ function syncLinkedChartAxes() {
   E_Y_MAX = Y_MAX;
   document.getElementById('xaxis-e').value = E_X_AXIS > 0 ? E_X_AXIS : '';
   document.getElementById('ymax-e').value = E_Y_MAX > 0 ? E_Y_MAX : '';
-  try {
-    localStorage.setItem(LS_E_XAXIS, E_X_AXIS);
-    localStorage.setItem(LS_E_YMAX, E_Y_MAX);
-  } catch (_) {}
+}
+
+function restoreIndependentChartAxes() {
+  E_X_AXIS = parseAxisValue(localStorage.getItem(LS_E_XAXIS) || '0');
+  E_Y_MAX = parseAxisValue(localStorage.getItem(LS_E_YMAX) || '0');
+  eScrollOffset = 0;
+  eYScrollOffset = 0;
+  document.getElementById('xaxis-e').value = E_X_AXIS > 0 ? E_X_AXIS : '';
+  document.getElementById('ymax-e').value = E_Y_MAX > 0 ? E_Y_MAX : '';
 }
 
 function setLinkedAxisInputs() {
