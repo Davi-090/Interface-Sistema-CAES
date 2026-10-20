@@ -120,7 +120,8 @@ function drawChart() {
     return;
   }
 
-  const pad = { top: 20, right: 20, bottom: 36, left: 64 };
+  const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
+  const pad = { top: 20, right: 20, bottom: 36, left: mobileLayout ? 52 : 64 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
 
@@ -360,20 +361,40 @@ const helpClose = document.getElementById('help-close');
 function closeHelp() {
   helpOverlay.classList.remove('is-open');
   helpOverlay.setAttribute('aria-hidden', 'true');
+  helpToggle.setAttribute('aria-label', 'Abrir índice de controles');
+  helpToggle.title = 'Índice de controles';
   helpToggle.focus();
 }
 
-helpToggle.addEventListener('click', () => {
+function toggleHelp() {
+  const isOpen = helpOverlay.classList.contains('is-open');
+  if (isOpen) {
+    closeHelp();
+    return;
+  }
   helpOverlay.classList.add('is-open');
   helpOverlay.setAttribute('aria-hidden', 'false');
+  helpToggle.setAttribute('aria-label', 'Fechar índice de controles');
+  helpToggle.title = 'Fechar índice de controles';
   helpClose.focus();
+}
+
+helpToggle.addEventListener('click', () => {
+  toggleHelp();
 });
 helpClose.addEventListener('click', closeHelp);
 helpOverlay.addEventListener('click', (e) => {
   if (e.target === helpOverlay) closeHelp();
 });
 document.addEventListener('keydown', (e) => {
-  if (helpOverlay.classList.contains('is-open') && e.key === 'Escape') closeHelp();
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    toggleHelp();
+  }
+  if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+    e.preventDefault();
+    e.target.blur();
+  }
 });
 
 function updateThemeButton() {
@@ -682,9 +703,27 @@ btnConn.addEventListener('click', () => {
   connected ? disconnect() : connect();
 });
 
+function toggleControl(control) {
+  control.checked = !control.checked;
+  control.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 // ── Scroll: mouse wheel ──────────────────────────────────────
 const chartWrap = document.querySelector('.chart-wrap');
+const chartModeControls = document.querySelector('.chart-mode-controls');
+const desktopChartModeHome = document.getElementById('chart-mode-controls-home');
+const mobileChartModeHome = document.getElementById('mobile-chart-mode-controls');
+let chartModeIsMobile = null;
+function placeChartModeControls() {
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  if (isMobile === chartModeIsMobile) return;
+  (isMobile ? mobileChartModeHome : desktopChartModeHome).appendChild(chartModeControls);
+  chartModeIsMobile = isMobile;
+}
+placeChartModeControls();
+window.addEventListener('resize', placeChartModeControls);
 const chartTooltip = document.getElementById('chart-tooltip');
+const energiaTooltip = document.getElementById('energia-tooltip');
 const chartHoverLine = document.getElementById('chart-hover-line');
 const scrollFixToggle = document.getElementById('scroll-fix-toggle');
 const infoFixToggle = document.getElementById('info-fix-toggle');
@@ -692,31 +731,37 @@ const linkChartsToggle = document.getElementById('link-charts-toggle');
 scrollFixToggle.checked = scrollFixEnabled;
 infoFixToggle.checked = infoFixEnabled;
 let hoverPointerClientX = null;
-const tooltipTime = chartTooltip.querySelector('[data-tooltip-time]');
-const tooltipValues = {
-  total: chartTooltip.querySelector('[data-tooltip-value="total"]'),
-  usina: chartTooltip.querySelector('[data-tooltip-value="usina"]'),
-  gerador: chartTooltip.querySelector('[data-tooltip-value="gerador"]'),
-  energia: chartTooltip.querySelector('[data-tooltip-value="energia"]')
-};
-
 function hideChartTooltip() {
   chartTooltip.style.display = 'none';
   chartTooltip.setAttribute('aria-hidden', 'true');
+  energiaTooltip.style.display = 'none';
+  energiaTooltip.setAttribute('aria-hidden', 'true');
   chartHoverLine.style.display = 'none';
   hoverHistoryIndex = null;
   hoverPointerClientX = null;
 }
 
-function updateChartTooltipValues(historyIndex) {
+function updateTooltipValues(tooltip, historyIndex) {
   const usina = history.c1[historyIndex] * MULT_POTENCIA_USINA;
   const gerador = history.c2[historyIndex] * MULT_POTENCIA_GERADOR;
   const energia = history.p[historyIndex] * MULT_ENERGIA_POTENCIAL;
-  tooltipTime.textContent = history.times[historyIndex] || '--:--:--';
-  tooltipValues.total.textContent = (usina + gerador).toFixed(2);
-  tooltipValues.usina.textContent = usina.toFixed(2);
-  tooltipValues.gerador.textContent = gerador.toFixed(2);
-  tooltipValues.energia.textContent = energia.toFixed(1);
+  tooltip.querySelector('[data-tooltip-time]').textContent = history.times[historyIndex] || '--:--:--';
+  tooltip.querySelector('[data-tooltip-value="total"]').textContent = (usina + gerador).toFixed(2);
+  tooltip.querySelector('[data-tooltip-value="usina"]').textContent = usina.toFixed(2);
+  tooltip.querySelector('[data-tooltip-value="gerador"]').textContent = gerador.toFixed(2);
+  tooltip.querySelector('[data-tooltip-value="energia"]').textContent = energia.toFixed(1);
+}
+
+function positionTooltip(tooltip, wrap, clientX, clientY) {
+  tooltip.style.display = 'block';
+  tooltip.setAttribute('aria-hidden', 'false');
+  const wrapRect = wrap.getBoundingClientRect();
+  const x = clientX - wrapRect.left - wrap.clientLeft;
+  const y = clientY - wrapRect.top - wrap.clientTop;
+  const maxLeft = Math.max(6, wrap.clientWidth - tooltip.offsetWidth - 6);
+  const maxTop = Math.max(6, wrap.clientHeight - tooltip.offsetHeight - 6);
+  tooltip.style.left = `${Math.max(6, Math.min(maxLeft, x + 14))}px`;
+  tooltip.style.top = `${Math.max(6, Math.min(maxTop, y + 14))}px`;
 }
 
 function positionHoverLine() {
@@ -762,7 +807,7 @@ function syncHoveredChartPoint() {
     const point = Math.round(((pointerX - chartPointLayout.left) / chartPointLayout.width) * (chartPointLayout.count - 1));
     hoverHistoryIndex = chartPointLayout.start + point;
   }
-  updateChartTooltipValues(hoverHistoryIndex);
+  updateTooltipValues(chartTooltip, hoverHistoryIndex);
   positionHoverLine();
 }
 
@@ -774,7 +819,6 @@ function showChartTooltip(e) {
   }
 
   const canvasRect = canvas.getBoundingClientRect();
-  const wrapRect = chartWrap.getBoundingClientRect();
   const pointerX = e.clientX - canvasRect.left;
   const pointerY = e.clientY - canvasRect.top;
   if (pointerX < layout.left || pointerX > layout.left + layout.width ||
@@ -786,21 +830,39 @@ function showChartTooltip(e) {
   const point = Math.round(((pointerX - layout.left) / layout.width) * (layout.count - 1));
   hoverHistoryIndex = layout.start + point;
   hoverPointerClientX = e.clientX;
-  updateChartTooltipValues(hoverHistoryIndex);
-
-  chartTooltip.style.display = 'block';
-  chartTooltip.setAttribute('aria-hidden', 'false');
-  const wrapX = e.clientX - wrapRect.left - chartWrap.clientLeft;
-  const wrapY = e.clientY - wrapRect.top - chartWrap.clientTop;
-  const maxLeft = chartWrap.clientWidth - chartTooltip.offsetWidth - 6;
-  const maxTop = chartWrap.clientHeight - chartTooltip.offsetHeight - 6;
-  chartTooltip.style.left = `${Math.max(6, Math.min(maxLeft, wrapX + 14))}px`;
-  chartTooltip.style.top = `${Math.max(6, Math.min(maxTop, wrapY + 14))}px`;
+  energiaTooltip.style.display = 'none';
+  updateTooltipValues(chartTooltip, hoverHistoryIndex);
+  positionTooltip(chartTooltip, chartWrap, e.clientX, e.clientY);
   positionHoverLine();
 }
 
+function showTouchTooltip(touch, wrap, chartCanvas, layout, tooltip, isMainChart) {
+  if (!layout) return;
+  const canvasRect = chartCanvas.getBoundingClientRect();
+  const x = touch.clientX - canvasRect.left;
+  const y = touch.clientY - canvasRect.top;
+  if (x < layout.left || x > layout.left + layout.width ||
+      y < layout.top || y > layout.top + layout.height) return;
+
+  const point = Math.round(((x - layout.left) / layout.width) * (layout.count - 1));
+  const historyIndex = layout.start + point;
+  updateTooltipValues(tooltip, historyIndex);
+  if (isMainChart) {
+    energiaTooltip.style.display = 'none';
+    hoverHistoryIndex = historyIndex;
+    hoverPointerClientX = touch.clientX;
+  } else {
+    chartTooltip.style.display = 'none';
+    chartHoverLine.style.display = 'none';
+  }
+  positionTooltip(tooltip, wrap, touch.clientX, touch.clientY);
+  if (isMainChart) positionHoverLine();
+}
+
 chartWrap.addEventListener('pointermove', showChartTooltip);
-chartWrap.addEventListener('pointerleave', hideChartTooltip);
+chartWrap.addEventListener('pointerleave', (e) => {
+  if (!e.pointerType || e.pointerType === 'mouse' || e.pointerType === 'pen') hideChartTooltip();
+});
 
 scrollFixToggle.addEventListener('change', () => {
   scrollFixEnabled = scrollFixToggle.checked;
@@ -864,9 +926,12 @@ chartWrap.addEventListener('wheel', (e) => {
 
 let touchStartX = null;
 let touchStartY = null;
+let touchDidMove = false;
 chartWrap.addEventListener('touchstart', (e) => {
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
+  touchDidMove = false;
+  hideChartTooltip();
 }, { passive: true });
 
 chartWrap.addEventListener('touchmove', (e) => {
@@ -874,6 +939,7 @@ chartWrap.addEventListener('touchmove', (e) => {
   const dx = touchStartX - e.touches[0].clientX;
   const dy = touchStartY - e.touches[0].clientY;
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) touchDidMove = true;
 
   if (Math.abs(dy) > Math.abs(dx)) {
     // Swipe vertical → Y scroll
@@ -906,7 +972,13 @@ chartWrap.addEventListener('touchmove', (e) => {
   drawChart();
 }, { passive: false });
 
-chartWrap.addEventListener('touchend', () => { touchStartX = null; touchStartY = null; });
+chartWrap.addEventListener('touchend', (e) => {
+  if (!touchDidMove && e.changedTouches.length) {
+    showTouchTooltip(e.changedTouches[0], chartWrap, canvas, chartPointLayout, chartTooltip, true);
+  }
+  touchStartX = null;
+  touchStartY = null;
+});
 
 // ── Y-max: aceita 0 (automático) e inteiros positivos (fixo) ──
 function onYMaxChange(val) {
@@ -998,7 +1070,32 @@ function toggleSim() {
 
 // ── Keyboard: Tab×2 = simulação ──────────────────────────────
 let tabCount = 0, tabTimer = null;
+let spacePressAt = 0;
 document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !e.repeat) {
+    if (helpOverlay.classList.contains('is-open')) return;
+    const target = e.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) {
+      spacePressAt = 0;
+      return;
+    }
+    e.preventDefault();
+    const now = Date.now();
+    if (now - spacePressAt <= 450) {
+      spacePressAt = 0;
+      if (simInterval) toggleSim();
+      connected ? disconnect() : connect();
+    } else {
+      spacePressAt = now;
+    }
+  }
+
+  if (helpOverlay.classList.contains('is-open')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  if (!e.repeat && e.key === '4') toggleControl(linkChartsToggle);
+  if (!e.repeat && e.key === '5') toggleControl(scrollFixToggle);
+  if (!e.repeat && e.key === '6') toggleControl(infoFixToggle);
+
   if (e.key === 'Tab') {
     if (helpOverlay.classList.contains('is-open')) return;
     e.preventDefault();
@@ -1017,7 +1114,7 @@ document.addEventListener('keydown', (e) => {
 let zeroCount = 0, zeroTimer = null;
 document.addEventListener('keydown', (e) => {
   if (helpOverlay.classList.contains('is-open')) return;
-  if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
   if (e.key === '1' && !e.repeat) {
     e.preventDefault();
     resetMultipliers();
@@ -1112,6 +1209,7 @@ function getEView() {
 
 const canvasE = document.getElementById('chart-energia');
 const ctxE    = canvasE.getContext('2d');
+let energiaPointLayout = null;
 
 function resizeCanvasE() {
   const w = canvasE.offsetWidth, h = canvasE.offsetHeight;
@@ -1121,6 +1219,7 @@ function resizeCanvasE() {
 }
 
 function drawEnergia() {
+  energiaPointLayout = null;
   resizeCanvasE();
   const W = canvasE.width, H = canvasE.height;
   ctxE.clearRect(0, 0, W, H);
@@ -1132,7 +1231,7 @@ function drawEnergia() {
 
   const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
   const pad = mobileLayout
-    ? { top: 20, right: 20, bottom: 36, left: 64 }
+    ? { top: 20, right: 20, bottom: 36, left: 52 }
     : { top: 14, right: 16, bottom: 24, left: 38 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
@@ -1181,14 +1280,19 @@ function drawEnergia() {
   // X labels
   const n = sliceLb.length;
   if (n < 2) return;
-  const step = Math.max(1, Math.floor(n / (mobileLayout ? 8 : 5)));
+  energiaPointLayout = { start, count: n, left: pad.left, top: pad.top, width: plotW, height: plotH };
   ctxE.fillStyle = getThemeColor('--chart-label', '#9AA5B8'); ctxE.textAlign = 'center'; ctxE.font = `${mobileLayout ? 11 : 9}px "Share Tech Mono"`;
-  sliceLb.forEach((lbl, i) => {
-    if (i % step === 0) {
-      const x = pad.left + (i / (n - 1)) * plotW;
-      ctxE.fillText(lbl, x, H - (mobileLayout ? 8 : 5));
-    }
-  });
+  const maxTicks = Math.max(2, Math.floor(plotW / (mobileLayout ? 64 : 58)));
+  const tickCount = Math.min(n, maxTicks);
+  const visibleLabels = new Set();
+  for (let tick = 0; tick < tickCount; tick++) {
+    const i = Math.round(tick * (n - 1) / (tickCount - 1));
+    const label = sliceLb[i];
+    if (visibleLabels.has(label)) continue;
+    visibleLabels.add(label);
+    const x = pad.left + (i / (n - 1)) * plotW;
+    ctxE.fillText(label, x, H - (mobileLayout ? 8 : 5));
+  }
 
   // Clamp
   const clamped = E_Y_MAX > 0 ? dispE.map(v => Math.min(v, maxVal)) : dispE;
@@ -1257,9 +1361,11 @@ energiaWrap.addEventListener('wheel', (e) => {
   chartLinkEnabled ? drawChart() : drawEnergia();
 }, { passive: false });
 
-let eTouchX = null, eTouchY = null;
+let eTouchX = null, eTouchY = null, eTouchMoved = false;
 energiaWrap.addEventListener('touchstart', (e) => {
   eTouchX = e.touches[0].clientX; eTouchY = e.touches[0].clientY;
+  eTouchMoved = false;
+  hideChartTooltip();
 }, { passive: true });
 
 energiaWrap.addEventListener('touchmove', (e) => {
@@ -1267,6 +1373,7 @@ energiaWrap.addEventListener('touchmove', (e) => {
   const dx = eTouchX - e.touches[0].clientX;
   const dy = eTouchY - e.touches[0].clientY;
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) eTouchMoved = true;
   if (Math.abs(dy) > Math.abs(dx)) {
     const allVals  = history.p.map(v => v * MULT_ENERGIA_POTENCIAL);
     const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
@@ -1290,7 +1397,14 @@ energiaWrap.addEventListener('touchmove', (e) => {
   chartLinkEnabled ? drawChart() : drawEnergia();
 }, { passive: false });
 
-energiaWrap.addEventListener('touchend', () => { eTouchX = null; eTouchY = null; });
+energiaWrap.addEventListener('touchend', (e) => {
+  const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
+  if (mobileViewport && !eTouchMoved && e.changedTouches.length) {
+    showTouchTooltip(e.changedTouches[0], energiaWrap, canvasE, energiaPointLayout, energiaTooltip, false);
+  }
+  eTouchX = null;
+  eTouchY = null;
+});
 
 // Chama drawEnergia junto com drawChart
 const _drawChartOrig = drawChart;
@@ -1354,7 +1468,9 @@ window.addEventListener('resize', () => {
   drawChart();
 });
 
-const chartResizeObserver = new ResizeObserver(() => drawChart());
+const chartResizeObserver = new ResizeObserver(() => {
+  drawChart();
+});
 chartResizeObserver.observe(document.querySelector('.chart-wrap'));
 chartResizeObserver.observe(document.querySelector('.energia-wrap'));
 

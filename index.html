@@ -42,10 +42,10 @@
           <path d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"></path>
         </svg>
       </button>
-      <button id="help-toggle" type="button" aria-label="Abrir índice de controles" title="Índice de controles">?</button>
-      <button id="install-app" type="button" aria-label="Instalar Sistema CAES" title="Instalar Sistema CAES" hidden>
+      <button id="install-app" type="button" aria-label="Instalar aplicativo" title="Instalar aplicativo" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"></path></svg>
       </button>
+      <button id="help-toggle" type="button" aria-label="Abrir índice de controles" title="Índice de controles">?</button>
     </div>
     <div class="header-action-buttons">
       <button id="btn-connect">
@@ -75,22 +75,24 @@
       </div>
       <!-- Canto superior direito -->
       <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;">
-        <div class="chart-mode-controls" aria-label="Opções dos gráficos">
-          <label class="chart-mode-toggle" for="link-charts-toggle" title="Sincroniza eixos e posição dos dois gráficos">
-            <span>Link</span>
-            <input id="link-charts-toggle" type="checkbox" role="switch" aria-label="Link">
-            <span class="toggle-track" aria-hidden="true"></span>
-          </label>
-          <label class="chart-mode-toggle" for="scroll-fix-toggle" title="Mantém fixa a janela histórica dos dois gráficos enquanto chegam novas leituras">
-            <span>Scroll Fix</span>
-            <input id="scroll-fix-toggle" type="checkbox" role="switch" aria-label="Scroll Fix">
-            <span class="toggle-track" aria-hidden="true"></span>
-          </label>
-          <label class="chart-mode-toggle" for="info-fix-toggle" title="Mantém a linha do gráfico principal ligada à amostra selecionada">
-            <span>Info Fix</span>
-            <input id="info-fix-toggle" type="checkbox" role="switch" aria-label="Info Fix">
-            <span class="toggle-track" aria-hidden="true"></span>
-          </label>
+        <div id="chart-mode-controls-home">
+          <div class="chart-mode-controls" aria-label="Opções dos gráficos">
+            <label class="chart-mode-toggle" for="link-charts-toggle" title="Sincroniza eixos e posição dos dois gráficos">
+              <span>Link</span>
+              <input id="link-charts-toggle" type="checkbox" role="switch" aria-label="Link">
+              <span class="toggle-track" aria-hidden="true"></span>
+            </label>
+            <label class="chart-mode-toggle" for="scroll-fix-toggle" title="Mantém fixa a janela histórica dos dois gráficos enquanto chegam novas leituras">
+              <span>Scroll Fix</span>
+              <input id="scroll-fix-toggle" type="checkbox" role="switch" aria-label="Scroll Fix">
+              <span class="toggle-track" aria-hidden="true"></span>
+            </label>
+            <label class="chart-mode-toggle" for="info-fix-toggle" title="Mantém a linha do gráfico principal ligada à amostra selecionada">
+              <span>Info Fix</span>
+              <input id="info-fix-toggle" type="checkbox" role="switch" aria-label="Info Fix">
+              <span class="toggle-track" aria-hidden="true"></span>
+            </label>
+          </div>
         </div>
         <div class="legend-item axis-label">X-Axis</div>
         <div class="ymax-wrap">
@@ -119,7 +121,7 @@
         <div class="nd-text">AGUARDANDO CONEXÃO COM ARDUINO</div>
       </div>
       <div id="chart-hover-line" aria-hidden="true"></div>
-      <div id="chart-tooltip" role="tooltip" aria-hidden="true">
+      <div id="chart-tooltip" class="chart-tooltip" role="tooltip" aria-hidden="true">
         <div class="chart-tooltip-time" data-tooltip-time>--:--:--</div>
         <div class="chart-tooltip-row"><span>Potência Total</span><strong><span data-tooltip-value="total"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Potência Usina</span><strong><span data-tooltip-value="usina"></span> W</strong></div>
@@ -166,6 +168,13 @@
         <div class="nd-icon">◈</div>
         <div class="nd-text">AGUARDANDO CONEXÃO COM ARDUINO</div>
       </div>
+      <div id="energia-tooltip" class="chart-tooltip" role="tooltip" aria-hidden="true">
+        <div class="chart-tooltip-time" data-tooltip-time>--:--:--</div>
+        <div class="chart-tooltip-row"><span>Potência Total</span><strong><span data-tooltip-value="total"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Potência Usina</span><strong><span data-tooltip-value="usina"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Potência Gerador</span><strong><span data-tooltip-value="gerador"></span> W</strong></div>
+        <div class="chart-tooltip-row"><span>Energia Pot. Armazenada</span><strong><span data-tooltip-value="energia"></span> J</strong></div>
+      </div>
       <canvas id="chart-energia"></canvas>
     </div>
   </div>
@@ -173,6 +182,7 @@
 
   <!-- Sidebar cards -->
   <div class="sidebar">
+    <div id="mobile-chart-mode-controls" aria-label="Opções dos gráficos"></div>
     <div class="sidebar-cards-grid">
 
     <!-- Total -->
@@ -281,7 +291,7 @@
         <dt>CONECTAR</dt><dd>Abre a seleção de uma porta serial para conectar ao Arduino. O horário no cabeçalho é atualizado continuamente.</dd>
         <dt>Multiplicadores</dt><dd>Os campos × ajustam os fatores aplicados às leituras brutas antes da exibição nas unidades do projeto.</dd>
         <dt>DEFAULT</dt><dd>Restaura os multiplicadores padrão.</dd>
-        <dt>Instalar / criar atalho</dt><dd>Use o menu do navegador para instalar o Sistema CAES ou criar um atalho. Em navegadores compatíveis, o botão de instalação inicia o processo diretamente.</dd>
+        <dt>Instalar</dt><dd>Em navegadores compatíveis, o botão de download inicia a instalação do Sistema CAES.</dd>
         <dt>Alças de redimensionamento</dt><dd>Arraste a divisória lateral para ajustar a largura da sidebar ou a divisória acima dos dados inferiores para ajustar a altura do gráfico menor. Os tamanhos ficam salvos.</dd>
       </dl>
       <h3>Teclas</h3>
@@ -289,7 +299,9 @@
         <dt><kbd>1</kbd></dt><dd>Restaura os multiplicadores padrão. Não atua enquanto um campo de texto ou número está em foco.</dd>
         <dt><kbd>0</kbd> duas vezes</dt><dd>Limpa os gráficos. Não atua enquanto um campo de texto ou número está em foco.</dd>
         <dt><kbd>Tab</kbd> duas vezes</dt><dd>Inicia ou interrompe a simulação. Dentro do índice, Tab navega pelos controles.</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Fecha este índice.</dd>
+        <dt><kbd>Espaço</kbd> duas vezes</dt><dd>Conecta ou desconecta. Se a simulação estiver ativa, ela para e inicia a conexão.</dd>
+        <dt><kbd>4</kbd> / <kbd>5</kbd> / <kbd>6</kbd></dt><dd>Alterna Link, Scroll Fix e Info Fix, respectivamente.</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Abre ou fecha este índice.</dd>
       </dl>
       <p class="help-dismiss-note">Clique fora desta janela ou pressione Esc para fechar.</p>
     </div>
