@@ -67,11 +67,12 @@
   <div class="chart-panel">
     <div class="chart-header">
       <!-- Legenda à esquerda -->
-      <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#12FF80"></div>Potência Total</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#00CFFF"></div>Usina</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#FFB800"></div>Gerador</div>
-
+      <div id="chart-legend-home">
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#12FF80"></div>Potência Total</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00CFFF"></div>Usina</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#FFB800"></div>Gerador</div>
+        </div>
       </div>
       <!-- Canto superior direito -->
       <div id="chart-controls" style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;">
@@ -96,7 +97,7 @@
         </div>
         <div class="legend-item axis-label">X-Axis</div>
         <div class="ymax-wrap">
-          <input class="ymax-input" type="number" step="1" min="1" id="xaxis-input"
+          <input class="ymax-input" type="number" step="1" min="1" id="xaxis-input" enterkeyhint="done"
             value=""
             oninput="onXAxisChange(this.value)"
             onchange="commitAxisInput('x', this)"
@@ -105,7 +106,7 @@
         </div>
         <div class="legend-item">Y-Axis</div>
         <div class="ymax-wrap">
-          <input class="ymax-input" type="number" step="1" min="1" id="ymax-input"
+          <input class="ymax-input" type="number" step="1" min="1" id="ymax-input" enterkeyhint="done"
             value=""
             oninput="onYMaxChange(this.value)"
             onchange="commitAxisInput('y', this)"
@@ -128,8 +129,10 @@
         <div class="chart-tooltip-row"><span>Potência Gerador</span><strong><span data-tooltip-value="gerador"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Energia Pot. Armazenada</span><strong><span data-tooltip-value="energia"></span> J</strong></div>
       </div>
+      <div class="chart-y-scrollbar" id="chart-y-scrollbar" role="scrollbar" aria-label="Deslocamento vertical do gráfico principal" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="0" hidden><div class="chart-y-scrollbar-thumb"></div></div>
       <canvas id="chart"></canvas>
     </div>
+    <div id="mobile-chart-legend"></div>
   </div>
 
   <!-- ── SIDEBAR COLUMN ── -->
@@ -139,11 +142,11 @@
   <!-- ! Mini-gráfico Energia Pot. Armazenada -->
   <div class="energia-panel">
     <div class="energia-header">
-      <span class="energia-title"><span class="legend-dot" style="background:#FF3C00"></span>Energia Pot. Armazenada</span>
+      <div id="energia-title-home"><span class="energia-title"><span class="legend-dot" style="background:#FF3C00"></span>Energia Pot. Armazenada</span></div>
       <div class="energia-controls">
         <label class="energia-axis-control">X-Axis
           <span class="ymax-wrap">
-            <input class="ymax-input" type="number" step="1" min="1" id="xaxis-e"
+            <input class="ymax-input" type="number" step="1" min="1" id="xaxis-e" enterkeyhint="done"
               value=""
               oninput="onEAxisChange('x', this.value)"
               onchange="commitAxisInput('energia-x', this)"
@@ -153,7 +156,7 @@
         </label>
         <label class="energia-axis-control">Y-Axis
           <span class="ymax-wrap">
-            <input class="ymax-input" type="number" step="1" min="1" id="ymax-e"
+            <input class="ymax-input" type="number" step="1" min="1" id="ymax-e" enterkeyhint="done"
               value=""
               oninput="onEAxisChange('y', this.value)"
               onchange="commitAxisInput('energia-y', this)"
@@ -175,8 +178,10 @@
         <div class="chart-tooltip-row"><span>Potência Gerador</span><strong><span data-tooltip-value="gerador"></span> W</strong></div>
         <div class="chart-tooltip-row"><span>Energia Pot. Armazenada</span><strong><span data-tooltip-value="energia"></span> J</strong></div>
       </div>
+      <div class="chart-y-scrollbar" id="energia-y-scrollbar" role="scrollbar" aria-label="Deslocamento vertical do gráfico de energia armazenada" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="0" hidden><div class="chart-y-scrollbar-thumb"></div></div>
       <canvas id="chart-energia"></canvas>
     </div>
+    <div id="mobile-energia-title"></div>
   </div>
   <button id="energia-resizer" type="button" role="separator" aria-label="Redimensionar gráfico de energia armazenada" aria-orientation="horizontal" aria-valuemin="220" aria-valuenow="220" title="Arraste para redimensionar o gráfico de energia"></button>
 
@@ -200,7 +205,7 @@
       <div class="metric-label">
         <span>◈ Potência Usina</span>
         <div class="mult-wrap">
-          ×<input class="mult-input" type="number" step="any" id="mult-usina"
+          ×<input class="mult-input" type="number" step="any" id="mult-usina" enterkeyhint="done"
           value="0"
             oninput="onMultChange('usina', this.value)" title="Multiplicador Usina"/>
         </div>
@@ -214,7 +219,7 @@
       <div class="metric-label">
         <span>◈ Potência Gerador</span>
         <div class="mult-wrap">
-          ×<input class="mult-input" type="number" step="any" id="mult-gerador"
+          ×<input class="mult-input" type="number" step="any" id="mult-gerador" enterkeyhint="done"
             value="1000"
             oninput="onMultChange('gerador', this.value)" title="Multiplicador Gerador"/>
         </div>
@@ -228,7 +233,7 @@
       <div class="metric-label">
         <span>◈ Energia Pot. Armazenada</span>
         <div class="mult-wrap">
-          ×<input class="mult-input" type="number" step="any" id="mult-energia"
+          ×<input class="mult-input" type="number" step="any" id="mult-energia" enterkeyhint="done"
             value="20"
             oninput="onMultChange('energia', this.value)" title="Multiplicador Energia"/>
         </div>

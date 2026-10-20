@@ -357,6 +357,10 @@
   }
   #chart-mode-controls-home { display: contents; }
   #mobile-chart-mode-controls { display: none; }
+  #chart-legend-home,
+  #energia-title-home { display: contents; }
+  #mobile-chart-legend,
+  #mobile-energia-title { display: none; }
   .axis-label { margin-left: 20px; }
   .chart-mode-toggle {
     position: relative;
@@ -596,6 +600,7 @@
     pointer-events: none;
   }
   #chart-energia { width: 100%; height: 100%; display: block; }
+  .chart-y-scrollbar { display: none; }
 
   /* ── Sidebar ── */
   .sidebar {

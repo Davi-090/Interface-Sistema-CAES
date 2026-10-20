@@ -32,6 +32,26 @@ const ctx = canvas.getContext('2d');
 let chartPointLayout = null;
 let hoverHistoryIndex = null;
 let animFrame;
+let chartYScrollMax = 0;
+let energiaYScrollMax = 0;
+
+function updateYAxisScrollbar(element, offset, maxOffset, visibleRange, totalRange) {
+  if (!element) return;
+  element.hidden = maxOffset <= 0;
+  element.setAttribute('aria-valuemax', String(Math.round(maxOffset)));
+  element.setAttribute('aria-valuenow', String(Math.round(offset)));
+  if (maxOffset <= 0) return;
+
+  const trackHeight = element.clientHeight;
+  const thumb = element.querySelector('.chart-y-scrollbar-thumb');
+  const thumbHeight = trackHeight
+    ? Math.min(trackHeight, Math.max(18, trackHeight * visibleRange / Math.max(totalRange, visibleRange)))
+    : 18;
+  const travel = Math.max(0, trackHeight - thumbHeight);
+  const top = maxOffset > 0 ? (1 - offset / maxOffset) * travel : 0;
+  thumb.style.height = `${thumbHeight}px`;
+  thumb.style.top = `${top}px`;
+}
 
 function resizeCanvas() {
   const w = canvas.offsetWidth;
@@ -116,12 +136,14 @@ function drawChart() {
 
   chartPointLayout = null;
   if (history.labels.length < 2 || W === 0 || H === 0) {
+    chartYScrollMax = 0;
+    updateYAxisScrollbar(document.getElementById('chart-y-scrollbar'), 0, 0, 1, 1);
     syncHoveredChartPoint();
     return;
   }
 
   const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
-  const pad = { top: 20, right: 20, bottom: 36, left: mobileLayout ? 52 : 64 };
+  const pad = { top: 20, right: 20, bottom: 36, left: mobileLayout ? 45 : 64 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
 
@@ -147,6 +169,8 @@ function drawChart() {
   const absoluteMax = Math.max(dataMax, yMaxBase);
   const maxYScroll  = Math.max(0, absoluteMax - yMaxBase);
   yScrollOffset     = Math.max(0, Math.min(maxYScroll, yScrollOffset));
+  chartYScrollMax = maxYScroll;
+  updateYAxisScrollbar(document.getElementById('chart-y-scrollbar'), yScrollOffset, maxYScroll, yRange, yRange + maxYScroll);
 
   const minVal = yScrollOffset;
   const maxVal = yScrollOffset + yRange;
@@ -177,7 +201,7 @@ function drawChart() {
     ctx.fillStyle = getThemeColor('--chart-label', '#9AA5B8');
     ctx.font = '11px "Share Tech Mono"';
     ctx.textAlign = 'right';
-    ctx.fillText(label, pad.left - 8, y + 4);
+    ctx.fillText(label, pad.left - (mobileLayout ? 4 : 8), y + 4);
   }
 
   // X labels
@@ -393,6 +417,7 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
     e.preventDefault();
+    e.stopPropagation();
     e.target.blur();
   }
 });
@@ -713,11 +738,19 @@ const chartWrap = document.querySelector('.chart-wrap');
 const chartModeControls = document.querySelector('.chart-mode-controls');
 const desktopChartModeHome = document.getElementById('chart-mode-controls-home');
 const mobileChartModeHome = document.getElementById('mobile-chart-mode-controls');
+const chartLegend = document.querySelector('.chart-legend');
+const desktopChartLegendHome = document.getElementById('chart-legend-home');
+const mobileChartLegendHome = document.getElementById('mobile-chart-legend');
+const energiaTitle = document.querySelector('.energia-title');
+const desktopEnergiaTitleHome = document.getElementById('energia-title-home');
+const mobileEnergiaTitleHome = document.getElementById('mobile-energia-title');
 let chartModeIsMobile = null;
 function placeChartModeControls() {
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
   if (isMobile === chartModeIsMobile) return;
   (isMobile ? mobileChartModeHome : desktopChartModeHome).appendChild(chartModeControls);
+  (isMobile ? mobileChartLegendHome : desktopChartLegendHome).appendChild(chartLegend);
+  (isMobile ? mobileEnergiaTitleHome : desktopEnergiaTitleHome).appendChild(energiaTitle);
   chartModeIsMobile = isMobile;
 }
 placeChartModeControls();
@@ -891,6 +924,7 @@ linkChartsToggle.addEventListener('change', () => {
 chartWrap.addEventListener('wheel', (e) => {
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (e.shiftKey) {
+    if (mobileViewport) return;
     // Shift + scroll → move eixo Y para cima/baixo
     const delta = Math.sign(e.deltaY);
     // delta > 0 = scroll down = desce viewport = yScrollOffset diminui
@@ -941,31 +975,12 @@ chartWrap.addEventListener('touchmove', (e) => {
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (Math.abs(dx) > 5 || Math.abs(dy) > 5) touchDidMove = true;
 
-  if (Math.abs(dy) > Math.abs(dx)) {
-    // Swipe vertical → Y scroll
-    if (Math.abs(dy) < 5) return;
-    const allVals  = history.c1.map((v,i) =>
-      Math.max(v * MULT_POTENCIA_USINA + history.c2[i] * MULT_POTENCIA_GERADOR,
-               v * MULT_POTENCIA_USINA,
-               history.c2[i] * MULT_POTENCIA_GERADOR));
-    const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
-    const yMaxBase = Y_MAX > 0 ? Y_MAX : dataMax;
-    const step     = Math.max(1, Math.round(yMaxBase * 0.02));
-    const maxYScroll = Math.max(0, Math.max(dataMax, yMaxBase) - yMaxBase);
-    if (mobileViewport && (maxYScroll === 0 || (dy > 0 ? yScrollOffset >= maxYScroll : yScrollOffset <= 0))) return;
-    e.preventDefault();
-    // dy > 0 = dedo subiu = queremos ver mais para cima
-    yScrollOffset  = Math.max(0, Math.min(maxYScroll, yScrollOffset + Math.sign(dy) * step));
-    if (chartLinkEnabled) eYScrollOffset = yScrollOffset;
-  } else {
-    // Swipe horizontal → X scroll
-    if (X_AXIS === 0 || Math.abs(dx) < 5) return;
-    const maxOffset = Math.max(0, history.labels.length - X_AXIS);
-    if (mobileViewport && (maxOffset === 0 || (dx > 0 ? scrollOffset >= maxOffset : scrollOffset <= 0))) return;
-    e.preventDefault();
-    scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + Math.sign(dx) * 2));
-    if (chartLinkEnabled) eScrollOffset = scrollOffset;
-  }
+  if (Math.abs(dy) > Math.abs(dx) || X_AXIS === 0 || Math.abs(dx) < 5) return;
+  const maxOffset = Math.max(0, history.labels.length - X_AXIS);
+  if (mobileViewport && (maxOffset === 0 || (dx < 0 ? scrollOffset >= maxOffset : scrollOffset <= 0))) return;
+  e.preventDefault();
+  scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset - Math.sign(dx) * 2));
+  if (chartLinkEnabled) eScrollOffset = scrollOffset;
 
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
@@ -1227,11 +1242,15 @@ function drawEnergia() {
   const showNoData = history.labels.length < 2;
   noDataOverlay.style.opacity = showNoData ? '1' : '0';
   noDataOverlay.style.pointerEvents = showNoData ? 'auto' : 'none';
-  if (history.labels.length < 2 || W === 0 || H === 0) return;
+  if (history.labels.length < 2 || W === 0 || H === 0) {
+    energiaYScrollMax = 0;
+    updateYAxisScrollbar(document.getElementById('energia-y-scrollbar'), 0, 0, 1, 1);
+    return;
+  }
 
   const mobileLayout = window.matchMedia('(max-width: 767px)').matches;
   const pad = mobileLayout
-    ? { top: 20, right: 20, bottom: 36, left: 52 }
+    ? { top: 20, right: 20, bottom: 36, left: 45 }
     : { top: 14, right: 16, bottom: 24, left: 38 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top  - pad.bottom;
@@ -1247,6 +1266,8 @@ function drawEnergia() {
   const absMax   = Math.max(dataMax, eYBase);
   const maxEYScroll = Math.max(0, absMax - eYBase);
   eYScrollOffset = Math.max(0, Math.min(maxEYScroll, eYScrollOffset));
+  energiaYScrollMax = maxEYScroll;
+  updateYAxisScrollbar(document.getElementById('energia-y-scrollbar'), eYScrollOffset, maxEYScroll, eYBase, eYBase + maxEYScroll);
 
   const minVal = eYScrollOffset;
   const maxVal = eYScrollOffset + eYBase;
@@ -1336,6 +1357,7 @@ const energiaWrap = document.querySelector('.energia-wrap');
 energiaWrap.addEventListener('wheel', (e) => {
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (e.shiftKey) {
+    if (mobileViewport) return;
     const allVals  = history.p.map(v => v * MULT_ENERGIA_POTENCIAL);
     const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
     const eYBase   = E_Y_MAX > 0 ? E_Y_MAX : dataMax;
@@ -1374,25 +1396,12 @@ energiaWrap.addEventListener('touchmove', (e) => {
   const dy = eTouchY - e.touches[0].clientY;
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (Math.abs(dx) > 5 || Math.abs(dy) > 5) eTouchMoved = true;
-  if (Math.abs(dy) > Math.abs(dx)) {
-    const allVals  = history.p.map(v => v * MULT_ENERGIA_POTENCIAL);
-    const dataMax  = allVals.length ? Math.max(...allVals, 1) : 1;
-    const eYBase   = E_Y_MAX > 0 ? E_Y_MAX : dataMax;
-    const step     = Math.max(1, Math.round(eYBase * 0.02));
-    const maxScroll = Math.max(0, Math.max(dataMax, eYBase) - eYBase);
-    if (Math.abs(dy) < 5) return;
-    if (mobileViewport && (maxScroll === 0 || (dy > 0 ? eYScrollOffset >= maxScroll : eYScrollOffset <= 0))) return;
-    e.preventDefault();
-    eYScrollOffset = Math.max(0, Math.min(maxScroll, eYScrollOffset + Math.sign(dy) * step));
-    if (chartLinkEnabled) yScrollOffset = eYScrollOffset;
-  } else {
-    if (E_X_AXIS === 0 || Math.abs(dx) < 5) return;
-    const maxOffset = Math.max(0, history.labels.length - E_X_AXIS);
-    if (mobileViewport && (maxOffset === 0 || (dx > 0 ? eScrollOffset >= maxOffset : eScrollOffset <= 0))) return;
-    e.preventDefault();
-    eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset + Math.sign(dx) * 2));
-    if (chartLinkEnabled) scrollOffset = eScrollOffset;
-  }
+  if (Math.abs(dy) > Math.abs(dx) || E_X_AXIS === 0 || Math.abs(dx) < 5) return;
+  const maxOffset = Math.max(0, history.labels.length - E_X_AXIS);
+  if (mobileViewport && (maxOffset === 0 || (dx < 0 ? eScrollOffset >= maxOffset : eScrollOffset <= 0))) return;
+  e.preventDefault();
+  eScrollOffset = Math.max(0, Math.min(maxOffset, eScrollOffset - Math.sign(dx) * 2));
+  if (chartLinkEnabled) scrollOffset = eScrollOffset;
   eTouchX = e.touches[0].clientX; eTouchY = e.touches[0].clientY;
   chartLinkEnabled ? drawChart() : drawEnergia();
 }, { passive: false });
@@ -1406,9 +1415,80 @@ energiaWrap.addEventListener('touchend', (e) => {
   eTouchY = null;
 });
 
-// Chama drawEnergia junto com drawChart
+// Desenha o mini-gráfico antes do principal para manter a atualização visual alinhada.
 const _drawChartOrig = drawChart;
-drawChart = function() { _drawChartOrig(); drawEnergia(); };
+drawChart = function() { drawEnergia(); _drawChartOrig(); };
+
+function bindYAxisScrollbar(element, getMaxOffset, getOffset, setOffset, redraw) {
+  let activePointer = null;
+  let grabOffset = 0;
+  const thumb = element.querySelector('.chart-y-scrollbar-thumb');
+  const updateFromPointer = (clientY) => {
+    const maxOffset = getMaxOffset();
+    if (maxOffset <= 0) return;
+    const rect = element.getBoundingClientRect();
+    const thumbHeight = thumb.getBoundingClientRect().height;
+    const travel = Math.max(1, rect.height - thumbHeight);
+    const ratio = Math.max(0, Math.min(1, (clientY - rect.top - grabOffset) / travel));
+    setOffset((1 - ratio) * maxOffset);
+    redraw();
+  };
+  element.addEventListener('pointerdown', (e) => {
+    if (getMaxOffset() <= 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const thumbRect = thumb.getBoundingClientRect();
+    grabOffset = e.clientY >= thumbRect.top && e.clientY <= thumbRect.bottom
+      ? e.clientY - thumbRect.top
+      : thumbRect.height / 2;
+    activePointer = e.pointerId;
+    element.setPointerCapture(e.pointerId);
+    updateFromPointer(e.clientY);
+  });
+  element.addEventListener('pointermove', (e) => {
+    if (activePointer !== e.pointerId) return;
+    e.preventDefault();
+    updateFromPointer(e.clientY);
+  });
+  const stopDrag = (e) => {
+    if (activePointer !== e.pointerId) return;
+    activePointer = null;
+    if (element.hasPointerCapture(e.pointerId)) element.releasePointerCapture(e.pointerId);
+  };
+  element.addEventListener('pointerup', stopDrag);
+  element.addEventListener('pointercancel', stopDrag);
+  element.addEventListener('keydown', (e) => {
+    const maxOffset = getMaxOffset();
+    if (maxOffset <= 0) return;
+    const step = Math.max(1, maxOffset * (e.key.startsWith('Page') ? 0.2 : 0.05));
+    let next = getOffset();
+    if (e.key === 'ArrowUp' || e.key === 'PageUp') next += step;
+    else if (e.key === 'ArrowDown' || e.key === 'PageDown') next -= step;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = maxOffset;
+    else return;
+    e.preventDefault();
+    setOffset(Math.max(0, Math.min(maxOffset, next)));
+    redraw();
+  });
+}
+
+const chartYScrollBar = document.getElementById('chart-y-scrollbar');
+const energiaYScrollBar = document.getElementById('energia-y-scrollbar');
+bindYAxisScrollbar(
+  chartYScrollBar,
+  () => chartYScrollMax,
+  () => yScrollOffset,
+  value => { yScrollOffset = value; if (chartLinkEnabled) eYScrollOffset = value; },
+  () => drawChart()
+);
+bindYAxisScrollbar(
+  energiaYScrollBar,
+  () => energiaYScrollMax,
+  () => eYScrollOffset,
+  value => { eYScrollOffset = value; if (chartLinkEnabled) yScrollOffset = value; },
+  () => chartLinkEnabled ? drawChart() : drawEnergia()
+);
 
 // Redimensionamento persistente da coluna lateral
 const sidebarWidthKey = 'caes_sidebar_width';

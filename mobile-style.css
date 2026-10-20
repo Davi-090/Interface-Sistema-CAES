@@ -103,7 +103,52 @@
     .energia-title { order: 1; min-height: 16px; font-size: 9px; }
     .chart-wrap { flex: 0 0 220px; height: 220px; }
     .chart-wrap,
-    .energia-wrap { touch-action: pan-y; overscroll-behavior-x: contain; }
+    .energia-wrap { touch-action: pan-y; overscroll-behavior-x: contain; min-width: 0; box-sizing: border-box; }
+    .energia-wrap { width: 100%; max-width: 100%; overflow: hidden; }
+    #mobile-chart-legend,
+    #mobile-energia-title {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      min-width: 0;
+      margin-top: 4px;
+    }
+    #mobile-chart-legend .chart-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+    #mobile-energia-title .energia-title { display: flex; min-width: 0; white-space: normal; }
+    .chart-y-scrollbar {
+      position: absolute;
+      z-index: 25;
+      top: 20px;
+      right: 5px;
+      bottom: 36px;
+      display: block;
+      width: 10px;
+      border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--surface) 72%, transparent);
+      opacity: .55;
+      touch-action: none;
+      cursor: ns-resize;
+      transition: opacity .15s;
+    }
+    .chart-y-scrollbar[hidden] { display: none !important; }
+    .chart-y-scrollbar:hover,
+    .chart-y-scrollbar:focus-visible,
+    .chart-y-scrollbar:active { opacity: .95; }
+    .chart-y-scrollbar:focus-visible { outline: 1px solid var(--green); outline-offset: 1px; }
+    .chart-y-scrollbar-thumb {
+      position: absolute;
+      top: 0;
+      left: 2px;
+      right: 2px;
+      min-height: 18px;
+      border-radius: 4px;
+      background: var(--muted);
+    }
+    .chart-y-scrollbar:hover .chart-y-scrollbar-thumb,
+    .chart-y-scrollbar:focus-visible .chart-y-scrollbar-thumb,
+    .chart-y-scrollbar:active .chart-y-scrollbar-thumb { background: var(--green-dim); }
     .energia-axis-control { font-size: 9px; }
     .energia-axis-control .ymax-wrap,
     .energia-axis-control .ymax-input { width: 48px; }
@@ -120,6 +165,9 @@
     #energia-resizer { display: none; }
     .energia-panel {
       flex: 0 0 auto;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
       height: auto;
       padding: 12px;
       gap: 8px;
@@ -127,7 +175,7 @@
     }
     .energia-wrap { flex: 0 0 220px; height: 220px; }
     .chart-wrap::before,
-    .energia-wrap::before { inset: 20px 20px 24px 52px; }
+    .energia-wrap::before { inset: 20px 20px 24px 45px; }
     #btn-sim.simulating {
       border-color: var(--muted);
       color: var(--muted);
@@ -144,6 +192,8 @@
       justify-content: flex-start;
       width: 100%;
       margin: 0 0 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
     }
     #mobile-chart-mode-controls .chart-mode-controls {
       flex-wrap: wrap;
