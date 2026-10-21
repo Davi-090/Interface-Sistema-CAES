@@ -31,6 +31,8 @@ const canvas = document.getElementById('chart');
 const ctx = canvas.getContext('2d');
 let chartPointLayout = null;
 let hoverHistoryIndex = null;
+let energiaHoverIndex = null;
+let energiaHoverPointerClientX = null;
 let animFrame;
 let chartYScrollMax = 0;
 let energiaYScrollMax = 0;
@@ -488,6 +490,7 @@ function pushHistory(label, c1, c2, p, time) {
     history.p.shift();
     history.times.shift();
     if (hoverHistoryIndex !== null) hoverHistoryIndex--;
+    if (energiaHoverIndex !== null) energiaHoverIndex--;
   }
   scrollOffset = X_AXIS > 0
     ? Math.min(scrollOffset, Math.max(0, history.labels.length - X_AXIS))
@@ -790,8 +793,12 @@ function hideChartTooltip() {
   energiaTooltip.style.display = 'none';
   energiaTooltip.setAttribute('aria-hidden', 'true');
   chartHoverLine.style.display = 'none';
+  const eLine = document.getElementById('energia-hover-line');
+  if (eLine) eLine.style.display = 'none';
   hoverHistoryIndex = null;
   hoverPointerClientX = null;
+  energiaHoverIndex = null;
+  energiaHoverPointerClientX = null;
 }
 
 function updateTooltipValues(tooltip, historyIndex) {
@@ -889,11 +896,16 @@ function showChartTooltip(e) {
   positionHoverLine();
 }
 
-function showTouchTooltip(touch, wrap, chartCanvas, layout, tooltip, isMainChart) {
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 767px)').matches;
+}
+
+// Toque (dedo) ou clique (mouse/caneta) na tela mobile: mostra a telinha e a linha do ponto.
+function showPointTooltip(clientX, clientY, wrap, chartCanvas, layout, tooltip, isMainChart) {
   if (!layout) return;
   const canvasRect = chartCanvas.getBoundingClientRect();
-  const x = touch.clientX - canvasRect.left;
-  const y = touch.clientY - canvasRect.top;
+  const x = clientX - canvasRect.left;
+  const y = clientY - canvasRect.top;
   if (x < layout.left || x > layout.left + layout.width ||
       y < layout.top || y > layout.top + layout.height) return;
 
@@ -902,19 +914,53 @@ function showTouchTooltip(touch, wrap, chartCanvas, layout, tooltip, isMainChart
   updateTooltipValues(tooltip, historyIndex);
   if (isMainChart) {
     energiaTooltip.style.display = 'none';
+    document.getElementById('energia-hover-line').style.display = 'none';
+    energiaHoverIndex = null;
+    energiaHoverPointerClientX = null;
     hoverHistoryIndex = historyIndex;
-    hoverPointerClientX = touch.clientX;
+    hoverPointerClientX = clientX;
   } else {
     chartTooltip.style.display = 'none';
     chartHoverLine.style.display = 'none';
+    hoverHistoryIndex = null;
+    hoverPointerClientX = null;
+    energiaHoverIndex = historyIndex;
+    energiaHoverPointerClientX = clientX;
   }
-  positionTooltip(tooltip, wrap, touch.clientX, touch.clientY);
+  positionTooltip(tooltip, wrap, clientX, clientY);
   if (isMainChart) positionHoverLine();
+  else positionEnergiaHoverLine();
 }
 
-chartWrap.addEventListener('pointermove', showChartTooltip);
+function showTouchTooltip(touch, wrap, chartCanvas, layout, tooltip, isMainChart) {
+  showPointTooltip(touch.clientX, touch.clientY, wrap, chartCanvas, layout, tooltip, isMainChart);
+}
+
+function isMouseLike(e) {
+  return !e.pointerType || e.pointerType === 'mouse' || e.pointerType === 'pen';
+}
+
+chartWrap.addEventListener('pointermove', (e) => {
+  if (isMobileViewport() && isMouseLike(e)) return;
+  showChartTooltip(e);
+});
 chartWrap.addEventListener('pointerleave', (e) => {
-  if (!e.pointerType || e.pointerType === 'mouse' || e.pointerType === 'pen') hideChartTooltip();
+  if (isMobileViewport()) return;
+  if (isMouseLike(e)) hideChartTooltip();
+});
+chartWrap.addEventListener('pointerdown', (e) => {
+  if (!isMobileViewport() || !isMouseLike(e) || e.button !== 0) return;
+  hideChartTooltip();
+  showPointTooltip(e.clientX, e.clientY, chartWrap, canvas, chartPointLayout, chartTooltip, true);
+});
+// Ao passar do layout mobile para o desktop (ou vice-versa), limpa a telinha aberta.
+let lastTooltipViewportMobile = isMobileViewport();
+window.addEventListener('resize', () => {
+  const now = isMobileViewport();
+  if (now !== lastTooltipViewportMobile) {
+    lastTooltipViewportMobile = now;
+    hideChartTooltip();
+  }
 });
 
 scrollFixToggle.addEventListener('change', () => {
@@ -1432,6 +1478,54 @@ energiaWrap.addEventListener('touchmove', (e) => {
   chartLinkEnabled ? drawChart() : drawEnergia();
 }, { passive: false });
 
+function positionEnergiaHoverLine() {
+  const line = document.getElementById('energia-hover-line');
+  const layout = energiaPointLayout;
+  if (energiaHoverIndex === null || !layout || energiaHoverIndex < layout.start ||
+      energiaHoverIndex >= layout.start + layout.count) {
+    line.style.display = 'none';
+    return;
+  }
+  const canvasRect = canvasE.getBoundingClientRect();
+  const wrapRect = energiaWrap.getBoundingClientRect();
+  const point = energiaHoverIndex - layout.start;
+  line.style.left = `${canvasRect.left - wrapRect.left - energiaWrap.clientLeft + layout.left +
+    (point / (layout.count - 1)) * layout.width}px`;
+  line.style.top = `${canvasRect.top - wrapRect.top - energiaWrap.clientTop + layout.top}px`;
+  line.style.height = `${layout.height}px`;
+  line.style.display = 'block';
+}
+
+function syncEnergiaHoveredPoint() {
+  const line = document.getElementById('energia-hover-line');
+  if (energiaHoverIndex === null) { line.style.display = 'none'; return; }
+  if (!isMobileViewport()) { hideChartTooltip(); return; }
+  if (!energiaPointLayout) { line.style.display = 'none'; return; }
+  if (energiaHoverIndex < 0 || energiaHoverIndex >= history.labels.length) {
+    hideChartTooltip();
+    return;
+  }
+  if (!infoFixEnabled && energiaHoverPointerClientX !== null) {
+    const canvasRect = canvasE.getBoundingClientRect();
+    const pointerX = energiaHoverPointerClientX - canvasRect.left;
+    if (pointerX < energiaPointLayout.left || pointerX > energiaPointLayout.left + energiaPointLayout.width) {
+      line.style.display = 'none';
+      return;
+    }
+    const point = Math.round(((pointerX - energiaPointLayout.left) / energiaPointLayout.width) * (energiaPointLayout.count - 1));
+    energiaHoverIndex = energiaPointLayout.start + point;
+  }
+  updateTooltipValues(energiaTooltip, energiaHoverIndex);
+  positionEnergiaHoverLine();
+}
+
+// Mouse/caneta na tela mobile: clique funciona como o toque (o dedo já é tratado pelos eventos touch).
+energiaWrap.addEventListener('pointerdown', (e) => {
+  if (!isMobileViewport() || !isMouseLike(e) || e.button !== 0) return;
+  hideChartTooltip();
+  showPointTooltip(e.clientX, e.clientY, energiaWrap, canvasE, energiaPointLayout, energiaTooltip, false);
+});
+
 energiaWrap.addEventListener('touchend', (e) => {
   const mobileViewport = window.matchMedia('(max-width: 767px)').matches;
   if (mobileViewport && !eTouchMoved && e.changedTouches.length) {
@@ -1440,6 +1534,10 @@ energiaWrap.addEventListener('touchend', (e) => {
   eTouchX = null;
   eTouchY = null;
 });
+
+// Mantém a linha/telinha do gráfico secundário sincronizadas a cada redesenho.
+const _drawEnergiaOrig = drawEnergia;
+drawEnergia = function() { _drawEnergiaOrig(); syncEnergiaHoveredPoint(); };
 
 // Desenha o mini-gráfico antes do principal para manter a atualização visual alinhada.
 const _drawChartOrig = drawChart;
