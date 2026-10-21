@@ -103,6 +103,13 @@
     letter-spacing: 0.15em;
   }
 
+  /* Só no computador: espaço horizontal entre logo e título equivalente a um <br> (~1 linha).
+     A caixa da logo passa a ter a largura real da imagem (80px) para o espaço ficar visível. */
+  @media (min-width: 768px) {
+    .logo { gap: 20px; }
+    .logo-icon { width: 80px; flex: 0 0 80px; }
+  }
+
   .header-status {
     display: flex;
     align-items: center;
@@ -145,6 +152,25 @@
   #install-app:hover { background: rgba(95,99,104,0.14); }
   #install-app:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
   #install-app svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  #github-link {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+  }
+  #github-link:hover { background: rgba(95,99,104,0.14); }
+  #github-link:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  #github-link svg { width: 19px; height: 19px; fill: currentColor; opacity: .75; }
+  #github-link:hover svg { opacity: 1; }
   #help-toggle, #help-close {
     display: grid;
     place-items: center;
@@ -183,6 +209,9 @@
   .help-content dd { color: var(--muted); }
   .help-content kbd { padding: 1px 5px; border: 1px solid var(--border); border-radius: 2px; background: var(--card); color: var(--text); font: inherit; }
   .help-dismiss-note { margin-top: 16px; color: var(--muted); font-size: 11px; }
+  .help-link { margin-top: 8px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+  .help-link a { color: var(--green); text-decoration: underline; }
+  .help-link a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
   .theme-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .icon-moon { display: none; }
   .icon-sun { display: block; }

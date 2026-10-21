@@ -420,6 +420,15 @@ helpClose.addEventListener('click', closeHelp);
 helpOverlay.addEventListener('click', (e) => {
   if (e.target === helpOverlay) closeHelp();
 });
+// Com o índice aberto, Tab não navega pelos campos da tela: o foco circula só entre o botão de fechar e o link.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab' || !helpOverlay.classList.contains('is-open')) return;
+  e.preventDefault();
+  const focusables = Array.from(helpOverlay.querySelectorAll('button, a[href]'));
+  const i = focusables.indexOf(document.activeElement);
+  const next = e.shiftKey ? (i <= 0 ? focusables.length - 1 : i - 1) : (i + 1) % focusables.length;
+  focusables[next].focus();
+}, true);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     e.preventDefault();
@@ -1118,6 +1127,7 @@ document.addEventListener('keydown', (e) => {
 
   if (helpOverlay.classList.contains('is-open')) return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  if (!e.repeat && e.key === '3') themeToggle.click();
   if (!e.repeat && e.key === '4') toggleControl(linkChartsToggle);
   if (!e.repeat && e.key === '5') toggleControl(scrollFixToggle);
   if (!e.repeat && e.key === '6') toggleControl(infoFixToggle);

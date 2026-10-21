@@ -45,6 +45,9 @@
       <button id="install-app" type="button" aria-label="Instalar aplicativo" title="Instalar aplicativo" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 17v3h14v-3"></path></svg>
       </button>
+      <a id="github-link" href="https://github.com/Davi-090/Interface-Sistema-CAES" target="_blank" rel="noopener noreferrer" aria-label="Abrir o repositório no GitHub" title="Repositório no GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg>
+      </a>
       <button id="help-toggle" type="button" aria-label="Abrir índice de controles" title="Índice de controles">?</button>
     </div>
     <div class="header-action-buttons">
@@ -296,19 +299,22 @@
         <dt>CONECTAR</dt><dd>Abre a seleção de uma porta serial para conectar ao Arduino. O horário no cabeçalho é atualizado continuamente.</dd>
         <dt>Multiplicadores</dt><dd>Os campos × ajustam os fatores aplicados às leituras brutas antes da exibição nas unidades do projeto.</dd>
         <dt>DEFAULT</dt><dd>Restaura os multiplicadores padrão.</dd>
+        <dt>GitHub</dt><dd>O botão com a logo do GitHub, ao lado do download, abre o repositório do projeto em uma nova aba.</dd>
         <dt>Instalar</dt><dd>Em navegadores compatíveis, o botão de download inicia a instalação do Sistema CAES.</dd>
         <dt>Alças de redimensionamento</dt><dd>Arraste a divisória lateral para ajustar a largura da sidebar ou a divisória acima dos dados inferiores para ajustar a altura do gráfico menor. Os tamanhos ficam salvos.</dd>
       </dl>
-      <h3>Teclas</h3>
+      <h3>Atalhos de teclado</h3>
       <dl>
-        <dt><kbd>1</kbd></dt><dd>Restaura os multiplicadores padrão. Não atua enquanto um campo de texto ou número está em foco.</dd>
-        <dt><kbd>0</kbd> duas vezes</dt><dd>Limpa os gráficos. Não atua enquanto um campo de texto ou número está em foco.</dd>
-        <dt><kbd>Tab</kbd> duas vezes</dt><dd>Inicia ou interrompe a simulação. Dentro do índice, Tab navega pelos controles.</dd>
-        <dt><kbd>Espaço</kbd> duas vezes</dt><dd>Conecta ou desconecta. Se a simulação estiver ativa, ela para e inicia a conexão.</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Abre ou fecha índice.</dd>
+        <dt><kbd>0</kbd> <kbd>0</kbd></dt><dd>Limpa os gráficos.</dd>
+        <dt><kbd>1</kbd></dt><dd>Restaura os multiplicadores padrão.</dd>
+        <dt><kbd>3</kbd></dt><dd>Alterna entre os modos claro e escuro (igual ao botão Sol / Lua).</dd>
         <dt><kbd>4</kbd> / <kbd>5</kbd> / <kbd>6</kbd></dt><dd>Alterna Link, Scroll Fix e Info Fix, respectivamente.</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Abre ou fecha este índice.</dd>
+        <dt><kbd>Tab</kbd> <kbd>Tab</kbd></dt><dd>Inicia ou interrompe a simulação.</dd>
+        <dt><kbd>Space</kbd> <kbd>Space</kbd></dt><dd>Conecta ou desconecta com o Arduino.</dd>
       </dl>
       <p class="help-dismiss-note">Clique fora desta janela ou pressione Esc para fechar.</p>
+      <p class="help-link">Repositório do projeto: <a href="https://github.com/Davi-090/Interface-Sistema-CAES" target="_blank" rel="noopener noreferrer">https://github.com/Davi-090/Interface-Sistema-CAES</a></p>
     </div>
   </section>
 </div>
